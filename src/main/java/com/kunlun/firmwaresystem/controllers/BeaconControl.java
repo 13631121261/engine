@@ -8,34 +8,30 @@ import com.google.gson.reflect.TypeToken;
 import com.kunlun.firmwaresystem.device.PageBeacon;
 import com.kunlun.firmwaresystem.entity.Beacon;
 import com.kunlun.firmwaresystem.entity.Customer;
-import com.kunlun.firmwaresystem.entity.Person;
-import com.kunlun.firmwaresystem.entity.device.Devicep;
 import com.kunlun.firmwaresystem.interceptor.ParamsNotNull;
 import com.kunlun.firmwaresystem.mappers.GatewayMapper;
 import com.kunlun.firmwaresystem.mappers.Gateway_configMapper;
 import com.kunlun.firmwaresystem.sql.Beacon_Sql;
-import com.kunlun.firmwaresystem.sql.DeviceP_Sql;
 import com.kunlun.firmwaresystem.util.JsonConfig;
 import com.kunlun.firmwaresystem.util.RedisUtils;
 import com.kunlun.firmwaresystem.util.SystemUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.io.File;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.util.*;
 
 import static com.kunlun.firmwaresystem.NewSystemApplication.*;
 import static com.kunlun.firmwaresystem.util.JsonConfig.*;
 
 @RestController
 public class BeaconControl {
+    private static final Logger log = LoggerFactory.getLogger(BeaconControl.class);
     @Resource
     private RedisUtils redisUtil;
     @Resource
@@ -61,35 +57,23 @@ public class BeaconControl {
         if (StringUtils.isBlank(quickSearch)) {
             quickSearch="";
         }
+      //  println("1111111");
         PageBeacon pageBeacon=beacon_sql.selectPageBeacon(beaconMapper,page,limit,quickSearch,customer.getUserkey(),customer.getProject_key());
         if(pageBeacon.getBeaconList().size()>0){
             for(Beacon beacon:pageBeacon.getBeaconList()){
                 Beacon beacon1=beaconsMap.get(beacon.getMac());
                 beacon.setMap_key(beacon1.getMap_key());
-                beacon.setSos(beacon1.getSos());
-                beacon.setRun(beacon1.getRun());
-                beacon.setBt(beacon1.getBt());
-                beacon.setLastTime(beacon1.getLastTime());
                 beacon.setOnline(beacon1.getOnline());
-                if(beacon.getIsbind()==1&&beacon.getBind_type()==1){
-                    if(beacon.getDevice_sn()!=null){
-                        System.out.println(beacon.getDevice_sn());
-                        Devicep devicep=devicePMap.get(beacon.getDevice_sn());
-                        if(devicep!=null){
-                            beacon.setDevice_name(devicep.getName());
-                        }
-                    }
+                if(beacon1.getOnline()==0){
+                    beacon.setSos(-1);
+                    beacon.setRun(-1);
+                    beacon.setBt(0+"");
+                }else{
+                    beacon.setSos(beacon1.getSos());
+                    beacon.setRun(beacon1.getRun());
+                    beacon.setBt(beacon1.getBt());
                 }
-                if(beacon.getIsbind()==1&&beacon.getBind_type()==2){
-                    if(beacon.getDevice_sn()!=null){
-                        System.out.println(beacon.getDevice_sn());
-                        Person person=personMap.get(beacon.getDevice_sn());
-                        if(person!=null){
-                            beacon.setDevice_name(person.getName());
-                        }
-
-                    }
-                }
+                beacon.setLastTime(beacon1.getLastTime());
             }
         }
         JSONObject jsonObject = new JSONObject();
@@ -100,15 +84,57 @@ public class BeaconControl {
          return jsonObject;
     }
 
+    @RequestMapping(value = "userApi/beacon/getByMac", method = RequestMethod.GET, produces = "application/json")
+    public JSONObject getBeaconByMac(HttpServletRequest request) {
+        Customer customer = getCustomer(request);
+        Beacon_Sql beacon_sql=new Beacon_Sql();
+        String quickSearch=request.getParameter("mac");
+        if (StringUtils.isBlank(quickSearch)) {
+            quickSearch="";
+        }
+        List<Beacon> list=beacon_sql.getAllBeaconbyMac(beaconMapper,customer.getUserkey(),customer.getProject_key(),quickSearch);
+        if(!list.isEmpty()){
+            for(Beacon beacon:list){
+                Beacon beacon1=beaconsMap.get(beacon.getMac());
+                beacon.setMap_key(beacon1.getMap_key());
+                beacon.setOnline(beacon1.getOnline());
+                if(beacon1.getOnline()==0){
+                    beacon.setSos(-1);
+                    beacon.setRun(-1);
+                    beacon.setBt(""+0);
+                }else{
+                    beacon.setSos(beacon1.getSos());
+                    beacon.setRun(beacon1.getRun());
+                    beacon.setBt(beacon1.getBt());
+                }
+
+                beacon.setLastTime(beacon1.getLastTime());
+
+            }
+        }
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("code", 1);
+        jsonObject.put("msg", "ok");
+        jsonObject.put("count",list.size());
+        jsonObject.put("data", list);
+        return jsonObject;
+    }
     @RequestMapping(value = "userApi/beacon/index1", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getAllBeacon1(HttpServletRequest request) {
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         String type=request.getParameter("type");
         Beacon_Sql beacon_sql=new Beacon_Sql();
-        System.out.println("类型="+type);
+        println("类型="+type);
         List<Beacon> beaconList=beacon_sql.getunAllBeacon(beaconMapper,customer.getUserkey(),customer.getProject_key(),type);
         JSONObject jsonObject = new JSONObject();
-        beaconList.add(0,new Beacon("不绑定标签"));
+        if(lang!=null&&lang.equals("en")){
+            beaconList.add(0,new Beacon("UnBind"));
+        }
+        else{
+            beaconList.add(0,new Beacon("不绑定标签"));
+        }
+
         jsonObject.put("code", 1);
         jsonObject.put("msg", "ok");
         jsonObject.put("count", beaconList.size());
@@ -121,6 +147,7 @@ public class BeaconControl {
     @RequestMapping(value = "userApi/beacon/del", method = RequestMethod.POST, produces = "application/json")
     public JSONObject deleteBeacon(HttpServletRequest request, @RequestBody JSONArray jsonArray) {
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         Beacon_Sql beacon_sql=new Beacon_Sql();
         List<Integer> id=new ArrayList<Integer>();
         for(Object ids:jsonArray){
@@ -128,9 +155,7 @@ public class BeaconControl {
                 id.add(Integer.parseInt(ids.toString()));
                 for(String key:beaconsMap.keySet()){
                     Beacon beacon=beaconsMap.get(key);
-                    if(beacon!=null&&beacon.getId()==Integer.parseInt(ids.toString())&&beacon.getIsbind()==1){
-                        return JsonConfig.getJsonObj(CODE_10,null);
-                    }
+
                 }
             }
         }
@@ -138,18 +163,19 @@ public class BeaconControl {
             int status = beacon_sql.deletes(beaconMapper, id);
             beaconsMap=beacon_sql.getAllBeacon(beaconMapper);
             if(status!=-1){
-                return JsonConfig.getJsonObj(CODE_OK,null);
+                return JsonConfig.getJsonObj(CODE_OK,"",lang);
             }else{
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
         }
     }
     @RequestMapping(value = "userApi/beacon/add", method = RequestMethod.POST, produces = "application/json")
     public JSONObject addBeacon(HttpServletRequest request, @RequestBody JSONObject json) {
-        System.out.println(json.toString());
+        println(json.toString());
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         Beacon_Sql beacon_sql=new Beacon_Sql();
         Beacon beacon=new Gson().fromJson(json.toString(),new TypeToken<Beacon>(){}.getType());
         beacon.setUser_key(customer.getUserkey());
@@ -159,145 +185,114 @@ public class BeaconControl {
         if(beacon.getMac()!=null){
             beacon.setMac(beacon.getMac().replaceAll(" ","").toLowerCase());
         }
-        switch (beacon.getType()){
-            case 1:
-                beacon.setRun(-1);
-                beacon.setSos(-1);
-                break;
-             case 2:
-                 beacon.setRun(-1);
-                 beacon.setSos(0);
-                    break;
-            case 3:
-                beacon.setRun(0);
-                beacon.setSos(-1);
-                break;
-            case 4:
-                beacon.setRun(0);
-                beacon.setSos(0);
-                break;
-        }
+
         boolean status=beacon_sql.addBeacon(beaconMapper,beacon);
         if(status){
             beaconsMap.put(beacon.getMac(),beacon);
-            return JsonConfig.getJsonObj(CODE_OK,null);
+            return JsonConfig.getJsonObj(CODE_OK,null,lang);
         }
           else{
-            return JsonConfig.getJsonObj(CODE_REPEAT,null);
+            return JsonConfig.getJsonObj(CODE_REPEAT,null,lang);
             }
     }
-      @RequestMapping(value = "/userApi/uploadBeacon", method = RequestMethod.POST, produces = "text/plain")
+     @RequestMapping(value = "/userApi/uploadBeacon", method = RequestMethod.POST)
+    public JSONObject uploadBeacon(HttpServletRequest request, @RequestParam("data") MultipartFile file, HttpServletResponse response)
+             throws IOException {
+         println("ssssssssssss" + file.getName());
+         Customer customer = getCustomer(request);
+         File outfile = new File(file.getName()+System.currentTimeMillis() + ".xlsx");
+         outfile.createNewFile();
+         println("666" + file.getName());
+         if (file == null) {
+          return  JsonConfig.getJsonObj(CODE_13,null,customer.getLang());
+         }
+         ArrayList<HashMap<String, String>> data = null;
+         try {
+             data = SystemUtil.readExcel(file, new String[]{"mac", "type"});
+         } catch (Exception e) {
+             println("特别特别" + e);
+         }
+         if (data == null) {
+                 return  JsonConfig.getJsonObj(CODE_PARAMETER_TYPE_ERROR,null,customer.getLang());
+         } else {
+             Beacon_Sql beacon_sql = new Beacon_Sql();
+             for (Map<String, String> map : data) {
+                 println("循环");
+                 Beacon beacon = new Beacon();
+                 String types = map.get("type");
+                 String mac=map.get("mac");
+                 if(types==null||types.equals("")||mac==null||mac.equals("")){
+                     map.put("result", "Failed, incomplete data");
+                     continue;
+                 }
+
+                 beacon.setType(types);
+                 beacon.setProject_key(customer.getProject_key());
+                 beacon.setUser_key(customer.getUserkey());
+                 beacon.setMac(map.get("mac"));
+                 boolean status = beacon_sql.addBeacon(beaconMapper, beacon);
+                 if (status) {
+                     beaconsMap.put(beacon.getMac(),beacon);
+                     map.put("result", "Import was successful");
+                 } else {
+                     map.put("result", "Import failed, data duplication or other anomalies. Please contact the administrator");
+                 }
+             }
+             SystemUtil.writeExcel(outfile, new String[]{"mac","type","result"}, data);
+             String file_name=outfile.getAbsolutePath();
+             println("文件保存地址="+file_name);
+             redisUtil.set("file_name",file_name);
+             return JsonConfig.getJsonObj(CODE_OK,file_name,customer.getLang());
+
+         }
+     }
+
+    @RequestMapping(value = "/userApi/downResult", method = RequestMethod.GET)
     @ResponseBody
-    public File uploadBeacon(HttpServletRequest request, @RequestParam("data") MultipartFile file) throws IOException {
-          System.out.println("ssssssssssss"+file.getName());
-        String response;
-        InetAddress address = null;
-        Customer customer = getCustomer(request);
-        File outfile=new File(file.getName()+".xlsx");
-        outfile.createNewFile();
-          System.out.println(""+file.getName());
-       if(file==null){
-           HashMap<String,String> error=new HashMap<>();
-           error.put("result","失败，上传文件为空");
-           ArrayList<  HashMap<String,String>> list=new ArrayList<HashMap<String,String>>();
-           list.add(error);
-           SystemUtil.writeExcel(outfile,new String[]{"结果"},list);
-         return outfile;
-       }
-        ArrayList<HashMap<String, String>> data = SystemUtil.readExcel(file, new String[]{"mac","type"});
-        if (data == null) {
-            HashMap<String,String> error=new HashMap<String,String>();
-            error.put("result","失败，表格内容不能为空");
-            ArrayList<  HashMap<String,String>> list=new ArrayList<HashMap<String,String>>();
-            list.add(error);
-            SystemUtil.writeExcel(outfile,new String[]{"结果"},list);
-            return outfile;
-        } else {
-            int ok = 0;
-            int fail = 0;
-            Beacon_Sql beacon_sql = new Beacon_Sql();
-            for (Map<String, String> map : data) {
-                System.out.println("循环");
-                Beacon beacon = new Beacon();
-                String types=map.get("type");
-                int type=0;
-                switch (types){
-                    case "KTBB818":
-                        type=1;
-                        break;
-                    case "KTBB818-K":
-                        type=2;
-                        break;
-                    case "KTBB818-A":
-                        type=3;
-                        break;
-                    case "KTBB818-KA":
-                        type=4;
-                        break;
-                        default:
-                         map.put("result","失败，信标类型不符合");
-                        continue;
+    public void checkRecord(HttpServletResponse response, @ParamsNotNull @RequestParam(value = "file_name") String file_name) throws UnsupportedEncodingException {
+
+
+
+        file_name=file_name.replaceAll("5678","//").replaceAll("8765",":");
+        //String filePath = "E:\\蓝牙网关\\固件版本" ;
+        File file = new File(file_name);
+        if (file.exists()) { //判断文件父目录是否存在q
+            response.setContentType("application/vnd.ms-excel;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            // response.setContentType("application/force-download");
+            response.setHeader("Content-Disposition", "attachment;fileName=result.xls" );
+            byte[] buffer = new byte[1024];
+            FileInputStream fis = null; //文件输入流
+            BufferedInputStream bis = null;
+            OutputStream os = null; //输出流
+            try {
+                os = response.getOutputStream();
+                fis = new FileInputStream(file);
+                bis = new BufferedInputStream(fis);
+                int i = bis.read(buffer);
+                while (i != -1) {
+                    os.write(buffer, 0, i);
+                    i = bis.read(buffer);
                 }
-                beacon.setType(type) ;
-                beacon.setProject_key(customer.getProject_key());
-                beacon.setUser_key(customer.getUserkey());
-                beacon.setMac(map.get("mac"));
-                boolean status = beacon_sql.addBeacon(beaconMapper, beacon);
-                if (status) {
-                    map.put("result","添加成功");
-                } else {
-                    map.put("result","添加失败，数据重复或者其他异常，请联系管理员");
-                }
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-            SystemUtil.writeExcel(outfile,new String[]{"结果"},data);
-            return outfile;
-        }
-
-    }
-
-
-
-    @RequestMapping(value = "userApi/getTagByMap", method = RequestMethod.GET, produces = "application/json")
-    public JSONObject getGatewaybyMap(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "map_key") String map_key) {
-        // System.out.println(System.currentTimeMillis());
-        Customer customer = getCustomer(request);
-        DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-        Map<String,Devicep> deviceps=deviceP_sql.getAllDeviceP(devicePMapper,customer.getUserkey(),customer.getProject_key());
-        ArrayList<Devicep> deviceps1=new ArrayList<>();
-        for(String key:deviceps.keySet()){
-            Devicep devicep=deviceps.get(key);
-           String mac= devicep.getBind_mac();
-           if(mac!=null&&mac.length()>0){
-            Beacon beacon=beaconsMap.get(mac);
-            if(beacon.getOnline()==1){
-                devicep.setX(beacon.getX());
-                devicep.setY(beacon.getY());
-                devicep.setGateway_mac(beacon.getGateway_address());
-                devicep.setSos(beacon.getSos());
-                devicep.setBt(beacon.getBt());
-                deviceps1.add(devicep);
+            println("----------file download---" + file.getPath());
+            try {
+                bis.close();
+                fis.close();
+                file.delete();
+            } catch (IOException e) {
+                e.printStackTrace();
+                println("删除文件异常");
             }
-           }
-        }
-
-
-        try{
-
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("code", 1);
-            jsonObject.put("msg", "ok");
-            jsonObject.put("count", deviceps1.size());
-            jsonObject.put("data", deviceps1);
-            // System.out.println(System.currentTimeMillis());
-            return jsonObject;}catch (Exception e){
-            System.out.println(e);
-            return null;
         }
     }
     private Customer getCustomer(HttpServletRequest request) {
         String  token=request.getHeader("batoken");
         Customer customer = (Customer) redisUtil.get(token);
-        //   System.out.println("customer="+customer);
+        //   println("customer="+customer);
         return customer;
     }
 

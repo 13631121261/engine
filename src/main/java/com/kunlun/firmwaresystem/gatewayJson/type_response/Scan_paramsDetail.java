@@ -58,35 +58,35 @@ public class Scan_paramsDetail extends ResponseHead {
     }
 
     private void analysis(String gson) {
-        //   System.out.println("333");
+        //   println("333");
         JSONObject jsonObject = JSONObject.parseObject(gson);
-        //  System.out.println("44");
+        //  println("44");
         msgId = jsonObject.getIntValue("msgId");
-        // System.out.println("55");
+        // println("55");
         result = jsonObject.getBoolean("result");
-        //   System.out.println("66");
+        //   println("66");
         resp = jsonObject.getString("resp");
-        //  System.out.println("77");
+        //  println("77");
         report_onoff = jsonObject.getJSONObject("scan_report_onoff").getBoolean("enable");
-        //  System.out.println("888");
+        //  println("888");
         request_onoff = jsonObject.getJSONObject("scan_request_onoff").getBoolean("enable");
-        //  System.out.println("999");
+        //  println("999");
         if (jsonObject.getJSONObject("scan_stuff_card_onoff") != null) {
             stuff_card_onoff = jsonObject.getJSONObject("scan_stuff_card_onoff").getBoolean("enable");
         }
-        //  System.out.println("000");
+        //  println("000");
         report_interval = jsonObject.getJSONObject("scan_report_interval").getIntValue("value");
-        // System.out.println("aaa");
+        // println("aaa");
         report_max_num = jsonObject.getJSONObject("scan_report_max_num").getIntValue("value");
-        // System.out.println("bbb");
+        // println("bbb");
         report_rssi_only = jsonObject.getJSONObject("scan_report_rssi_only").getBoolean("enable");
-        // System.out.println("ccc");
+        // println("ccc");
         report_rank_rssi = jsonObject.getJSONObject("scan_report_rank_rssi").getBoolean("enable");
-        // System.out.println("ddd");
+        // println("ddd");
         channel_37 = jsonObject.getJSONObject("scan_rf_channel").getBoolean("ch37");
-      //  System.out.println("eee");
+      //  println("eee");
         channel_38 = jsonObject.getJSONObject("scan_rf_channel").getBoolean("ch38");
-        // System.out.println("fff");
+        // println("fff");
         channel_39 = jsonObject.getJSONObject("scan_rf_channel").getBoolean("ch39");
     }
 }

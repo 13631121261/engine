@@ -3,17 +3,15 @@ package com.kunlun.firmwaresystem.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.kunlun.firmwaresystem.NewSystemApplication;
 import com.kunlun.firmwaresystem.device.*;
 import com.kunlun.firmwaresystem.entity.*;
 import com.kunlun.firmwaresystem.entity.Map;
-import com.kunlun.firmwaresystem.entity.device.Device_offline;
-import com.kunlun.firmwaresystem.entity.device.Devicep;
-import com.kunlun.firmwaresystem.entity.device.Devicep_record;
-import com.kunlun.firmwaresystem.entity.device.Deviceptype;
 import com.kunlun.firmwaresystem.entity.web_Structure.GatewayTree;
 import com.kunlun.firmwaresystem.gatewayStatusTask;
 import com.kunlun.firmwaresystem.interceptor.ParamsNotNull;
@@ -35,13 +33,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.InetAddress;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import static com.kunlun.firmwaresystem.NewSystemApplication.*;
-import static com.kunlun.firmwaresystem.NewSystemApplication.redisUtil;
 import static com.kunlun.firmwaresystem.gatewayJson.Constant.*;
 import static com.kunlun.firmwaresystem.util.JsonConfig.*;
+import static javafx.scene.input.DataFormat.URL;
 
 @RestController
 public class UserControl {
@@ -63,16 +62,12 @@ public class UserControl {
     private GatewayMapper gatewayMapper;
     @Autowired
     private DepartmentMapper departmentMapper;
-    @Autowired
-    private PersonMapper personMapper;
-    @Autowired
-    private OutBoundMapper outBoundMapper;
+
     @Autowired
     private AreaMapper areaMapper;
     @Autowired
     private DeviceOfflineMapper deviceOfflineMapper;
-    @Autowired
-    private DevicepTypeMapper devicepTypeMapper;
+
     @Autowired
     private ProjectMapper projectMapper;
     @Autowired
@@ -100,19 +95,21 @@ public class UserControl {
         String userName=json.getString("username");
         String passWord=json.getString("password");
         Customer customer = new Customer(userName, passWord);
+        String lang=customer.getLang();
         Customer_sql customer_sql = new Customer_sql();
         List<Customer> customerList = customer_sql.getCustomer(customerMapper, customer);
         if (customerList == null || customerList.size() == 0) {
-            jsonObject = JsonConfig.getJsonObj(JsonConfig.CODE_RESPONSE_NULL, null);
+            jsonObject = JsonConfig.getJsonObj(JsonConfig.CODE_RESPONSE_NULL, null,lang);
         } else if (customerList.size() > 1) {
-            jsonObject = JsonConfig.getJsonObj(JsonConfig.CODE_RESPONSE_MORE, null);
+            jsonObject = JsonConfig.getJsonObj(JsonConfig.CODE_RESPONSE_MORE, null,lang);
         } else {
             customer=customerList.get(0);
+            println("账号="+customer);
             Permission_Sql permissionSql = new Permission_Sql();
            List<Permission>  permissions=permissionSql.seleceByOne(permissionMapper,customer.getPermission_key(),customer.getUserkey());
            if(permissions!=null&&permissions.size()==1){
                customer.setPermission(permissions.get(0));
-               System.out.println("设置了权限");
+               println("设置了权限");
            }
 
            String toketn="";
@@ -122,18 +119,20 @@ public class UserControl {
                toketn = Base64.getEncoder().encodeToString((customer.getCustomerkey() + "_" + System.currentTimeMillis()).getBytes()).replaceAll("\\+", "");
            }
 
-            System.out.println( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+            println( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
             customer.setToken(toketn);
             customer.setLast_login_time(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
             customer.setRefresh_token("");
+            customer_sql.updateCustomer(customerMapper,customer);
 //把原来的token清空
             redisUtil.set("tokenId:"+customer.getCustomerkey() , "", ExpireTime);
             //设置新的token
             redisUtil.set("tokenId:"+customer.getCustomerkey() , toketn, ExpireTime);
             //设置token对应内容
             redisUtil.set(toketn, customer, ExpireTime);
-            jsonObject = JsonConfig.getJsonToken(CODE_OK, customer,toketn);
-            System.out.println("登录信息=" + response);
+
+            jsonObject = JsonConfig.getJsonToken(CODE_OK, customer,toketn,lang);
+            println("登录信息=" + customer);
         }
 
         return jsonObject;
@@ -149,6 +148,7 @@ public class UserControl {
        String lang= customer.getLang();
        String project_key=httpRequest.getParameter("project_key");
        String time=( new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+        println("获取参数"+customer.toString());
        if(customer!=null){
             JSONObject data = new JSONObject();
             JSONObject json = new JSONObject();
@@ -163,8 +163,12 @@ public class UserControl {
             adminInfo.put("username",customer.getUsername());
             adminInfo.put("project_key",project_key);
             data.put("adminInfo",adminInfo);
-            String api="{\"siteName\": \"Asset Management\",\"version\": \"v1.0.0\",\"cdnUrl\": \"\",\"apiUrl\": \"https://www.kunlunlink.com/\",\"upload\": {\"maxsize\": 10485760,\"savename\":\"\\/storage\\/{topic}\\/{year}{mon}{day}\\/{filename}{filesha1}{.suffix}\",\"mimetype\": \"jpg,png,bmp,jpeg,gif,webp,zip,rar,xls,xlsx,doc,docx,wav,mp4,mp3,txt\",\"mode\": \"local\"}}";
-            JSONObject apiUrl=JSONObject.parseObject(api);
+           String api="{\"siteName\": \"定位引擎\",\"version\": \"v1.0.0\",\"cdnUrl\": \"\",\"apiUrl\": \"https://www.baidu.com/\",\"upload\": {\"maxsize\": 10485760,\"savename\":\"\\/storage\\/{topic}\\/{year}{mon}{day}\\/{filename}{filesha1}{.suffix}\",\"mimetype\": \"jpg,png,bmp,jpeg,gif,webp,zip,rar,xls,xlsx,doc,docx,wav,mp4,mp3,txt\",\"mode\": \"local\"}}";
+
+           if(lang.equals("en")){
+               api="{\"siteName\": \"Location Engine\",\"version\": \"v1.0.0\",\"cdnUrl\": \"\",\"apiUrl\": \"https://www.baidu.com/\",\"upload\": {\"maxsize\": 10485760,\"savename\":\"\\/storage\\/{topic}\\/{year}{mon}{day}\\/{filename}{filesha1}{.suffix}\",\"mimetype\": \"jpg,png,bmp,jpeg,gif,webp,zip,rar,xls,xlsx,doc,docx,wav,mp4,mp3,txt\",\"mode\": \"local\"}}";
+           }
+           JSONObject apiUrl=JSONObject.parseObject(api);
             data.put("time",System.currentTimeMillis()/1000);
             String t="{\n" +
                     "            \"installServicePort\":\"8000\",\n" +
@@ -184,11 +188,93 @@ public class UserControl {
                         break;
 
                     default:
-                        menus=" [ { \"extend\": \"none\",\"path\": \"project\",\"component\": \"\",\"menu_type\": null, \"keepalive\": 0,\"icon\": \"fa fa-group\",\"pid\": 0,\"type\": \"menu_dir\",\"title\": \"项目管理\",\"url\": \"\",\"children\": [{\"menu_type\": \"tab\",\"keepalive\": \"project/list\",\"icon\": \"fa fa-group\",\"pid\": 0,\"type\": \"menu\",\"title\": \"项目列表\",\"url\": \"\",\"extend\": \"none\",\"path\": \"project/list\",\"component\": \"/src/views/backend/project/list/index.vue\",\"children\":" +
-                                " [{\"extend\": \"none\",\"path\": \"\",\"component\": \"\",\"menu_type\": null,\"keepalive\": 0,\"name\": \"project/list/edit\",\"icon\": \"\",\"pid\": 3,\"id\": 4,\"type\": \"button\",\"title\": \"编辑\",\"url\": \"\"}," +
-                                "{\"extend\": \"none\",\"path\": \"\",\"component\": \"\",\"menu_type\": null,\"keepalive\": 0,\"name\": \"project/list/add\",\"icon\": \"\",\"pid\": 3,\"id\": 4,\"type\": \"button\",\"title\": \"添加\",\"url\": \"\"}," +
-                                "{\"extend\": \"none\",\"path\": \"\",\"component\": \"\",\"menu_type\": null,\"keepalive\": 0,\"name\": \"project/list/del\",\"icon\": \"\",\"pid\": 3,\"id\": 4,\"type\": \"button\",\"title\": \"删除\",\"url\": \"\"}],\"name\": \"project/list\",\"id\": 1}]}]";
-                        break;
+                        menus="[\n" +
+                                "            {\n" +
+                                "                \"extend\": \"none\",\n" +
+                                "                \"path\": \"project\",\n" +
+                                "                \"component\": \"\",\n" +
+                                "                \"menu_type\": null,\n" +
+                                "                \"children\": [\n" +
+                                "                    {\n" +
+                                "                        \"menu_type\": \"tab\",\n" +
+                                "                        \"keepalive\": \"project/list\",\n" +
+                                "                        \"icon\": \"fa fa-group\",\n" +
+                                "                        \"pid\": 0,\n" +
+                                "                        \"type\": \"menu\",\n" +
+                                "                        \"title\": \"项目列表\",\n" +
+                                "                        \"url\": \"\",\n" +
+                                "                        \"extend\": \"none\",\n" +
+                                "                        \"path\": \"project/list\",\n" +
+                                "                        \"component\": \"/src/views/backend/project/list/index.vue\",\n" +
+                                "                        \"children\": [\n" +
+                                "                            {\n" +
+                                "                                \"extend\": \"none\",\n" +
+                                "                                \"path\": \"\",\n" +
+                                "                                \"component\": \"\",\n" +
+                                "                                \"menu_type\": null,\n" +
+                                "                                \"keepalive\": 0,\n" +
+                                "                                \"name\": \"project/list/edit\",\n" +
+                                "                                \"icon\": \"\",\n" +
+                                "                                \"pid\": 3,\n" +
+                                "                                \"id\": 4,\n" +
+                                "                                \"type\": \"button\",\n" +
+                                "                                \"title\": \"编辑\",\n" +
+                                "                                \"url\": \"\"\n" +
+                                "                            },\n" +
+                                "                            {\n" +
+                                "                                \"extend\": \"none\",\n" +
+                                "                                \"path\": \"\",\n" +
+                                "                                \"component\": \"\",\n" +
+                                "                                \"menu_type\": null,\n" +
+                                "                                \"keepalive\": 0,\n" +
+                                "                                \"name\": \"project/list/add\",\n" +
+                                "                                \"icon\": \"\",\n" +
+                                "                                \"pid\": 3,\n" +
+                                "                                \"id\": 4,\n" +
+                                "                                \"type\": \"button\",\n" +
+                                "                                \"title\": \"添加\",\n" +
+                                "                                \"url\": \"\"\n" +
+                                "                            },\n" +
+                                "                            {\n" +
+                                "                                \"extend\": \"none\",\n" +
+                                "                                \"path\": \"\",\n" +
+                                "                                \"component\": \"\",\n" +
+                                "                                \"menu_type\": null,\n" +
+                                "                                \"keepalive\": 0,\n" +
+                                "                                \"name\": \"project/list/del\",\n" +
+                                "                                \"icon\": \"\",\n" +
+                                "                                \"pid\": 3,\n" +
+                                "                                \"id\": 4,\n" +
+                                "                                \"type\": \"button\",\n" +
+                                "                                \"title\": \"删除\",\n" +
+                                "                                \"url\": \"\"\n" +
+                                "                            }\n" +
+                                "                        ],\n" +
+                                "                        \"name\": \"project/list\",\n" +
+                                "                        \"id\": 1\n" +
+                                "                    }\n" +
+                                "                ],\n" +
+                                "                \"keepalive\": 0,\n" +
+                                "                \"icon\": \"fa fa-group\",\n" +
+                                "                \"pid\": 0,\n" +
+                                "                \"type\": \"menu_dir\",\n" +
+                                "                \"title\": \"项目管理\",\n" +
+                                "                \"url\": \"\"\n" +
+                                "            },\n" +
+                                "{\n" +
+                                "                         \"menu_type\": \"tab\",\n" +
+                                "                        \"keepalive\": \"system/list\",\n" +
+                                "                        \"icon\": \"fa fa-group\",\n" +
+                                "                        \"pid\": 0,\n" +
+                                "                        \"type\": \"menu\",\n" +
+                                "                        \"title\": \"系统设置\",\n" +
+                                "                        \"url\": \"\",\n" +
+                                "                        \"extend\": \"none\",\n" +
+                                "                        \"path\": \"system/list\",\n" +
+                                "                        \"component\": \"/src/views/backend/system/list/index.vue\"\n" +
+                                "}        ]";
+
+                    break;
                 }
 
                 //String menus="[{ \"extend\":\"none\", \"path\":\"project\", \"component\":\"\", \"menu_type\":null, \"children\":[  {\"extend\":\"none\",\"path\":\"project/list\",\"component\":\"/src/views/backend/project/list/index.vue\",\"menu_type\":\"tab\",\"keepalive\":\"project/list\",\"icon\":\"fa fa-group\",\"name\":\"project/list\",\"pid\":0,\"id\":1,\"type\":\"menu\",\"title\":\"项目列表\",\"url\":\"\"  },  {\"menu_type\":\"tab\",\"keepalive\":\"project/auth\",\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu\",\"title\":\"项目权限\",\"url\":\"\",\"extend\":\"none\",\"path\":\"project/auth\",\"component\":\"/src/views/backend/project/auth/index.vue\",\"children\":[ {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"project/auth/edit\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"编辑\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"project/auth/add\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"添加\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"project/auth/del\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"删除\",  \"url\":\"\" }],\"name\":\"project/auth\",\"id\":1  } ], \"keepalive\":0, \"icon\":\"fa fa-group\", \"pid\":0, \"type\":\"menu_dir\", \"title\":\"项目管理\", \"url\":\"\"},{ \"extend\":\"none\", \"path\":\"user\", \"component\":\"\", \"menu_type\":null, \"children\":[  {\"menu_type\":\"tab\",\"keepalive\":\"user/user\",\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu\",\"title\":\"用户列表\",\"url\":\"\",\"extend\":\"none\",\"path\":\"user/user\",\"component\":\"/src/views/backend/user/user/index.vue\",\"children\":[ {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/user/edit\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"编辑\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/user/add\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"添加\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/user/del\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"删除\",  \"url\":\"\" }],\"name\":\"user/user\",\"id\":1  },  {\"menu_type\":\"tab\",\"keepalive\":\"user/rule\",\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu\",\"title\":\"用户角色\",\"url\":\"\",\"extend\":\"none\",\"path\":\"user/rule\",\"component\":\"/src/views/backend/user/rule/index.vue\",\"children\":[ {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/rule/edit\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"编辑\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/rule/add\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"添加\",  \"url\":\"\" }, {  \"extend\":\"none\",  \"path\":\"\",  \"component\":\"\",  \"menu_type\":null,  \"keepalive\":0,  \"name\":\"user/rule/del\",  \"icon\":\"\",  \"pid\":3,  \"id\":4,  \"type\":\"button\",  \"title\":\"删除\",  \"url\":\"\" }],\"name\":\"user/rule\",\"id\":1  } ], \"keepalive\":0, \"icon\":\"fa fa-group\", \"pid\":0, \"type\":\"menu_dir\", \"title\":\"用户管理\", \"url\":\"\"}  ]";
@@ -201,7 +287,8 @@ public class UserControl {
                 return json;
             }
             else if(customer.getType()==1&&project_key!=null||customer.getType()==2){
-
+                println("账号"+customer.getProject_key());
+                println("语言="+customer.getLang());
                 switch (lang){
                     case  "en":
                         List<Menu_en> list=null;
@@ -215,9 +302,10 @@ public class UserControl {
                             //普通管理员，获取对应的权限
                             project_key=customer.getProject_key();
                             if(project_key==null||project_key.equals("")){
-                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"");
+                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"",lang);
                             }
                             else{
+                              //  println("RoseId"+customer.getRoles_id().substring(1));
                                 String[] rolesid=customer.getRoles_id().substring(1).split("-");
                                 Roles roles=null;
                                 MenuEn_Sql menu_sql=new MenuEn_Sql();
@@ -225,6 +313,7 @@ public class UserControl {
                                 List<Integer> ids=new ArrayList<Integer>();
                                 List<Integer> ids1=new ArrayList<Integer>();
                                 for(String id:rolesid){
+                                  //  println("获取具体的权限ID");
                                     roles=roles_sql.getOneRoles(rolesMapper,Integer.parseInt(id));
                                     String[] menu_ids=roles.getRules();
                                     for(String a:menu_ids){
@@ -243,7 +332,7 @@ public class UserControl {
                         /* JSONArray.parseArray(list.*/
                         // JSONArray menu=JSONArray.parseArray(menus);
                         //   data.put("menus",menu);
-                        System.out.println("id="+list.toString());
+                       // println("id="+list.toString());
                         data.put("menus",list);
                         json.put("data",data);
                         return json;
@@ -256,12 +345,14 @@ public class UserControl {
                             customer.setProject_key(project_key);
                             redisUtil.set(httpRequest.getHeader("batoken"),customer,600);
                         }else if(customer.getType()==2){
+                          //  println("类型2");
                             //普通管理员，获取对应的权限
                             project_key=customer.getProject_key();
                             if(project_key==null||project_key.equals("")){
-                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"");
+                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"",lang);
                             }
                             else{
+                               // println("RoseId"+customer.getRoles_id().substring(1));
                                 String[] rolesid=customer.getRoles_id().substring(1).split("-");
                                 Roles roles=null;
                                 Menu_Sql menu_sql=new Menu_Sql();
@@ -269,18 +360,22 @@ public class UserControl {
                                 List<Integer> ids=new ArrayList<Integer>();
                                 List<Integer> ids1=new ArrayList<Integer>();
                                 for(String id:rolesid){
+                                   // println("RoseId"+id);
                                     roles=roles_sql.getOneRoles(rolesMapper,Integer.parseInt(id));
                                     String[] menu_ids=roles.getRules();
                                     for(String a:menu_ids){
+                                      //  println("RoseId"+a);
                                         ids.add(Integer.parseInt(a));
                                     }
                                 }
                                 for(int id:ids){
+                                  //  println("ids1+"+id);
                                     ids1.add(id);
                                     Menu menu=  menu_sql.getMenu(menuMapper,id);
+                                  //  println(menu);
                                     getMenu(menu_sql,menu.getPid(),ids1);
                                 }
-                                System.out.println("id="+ids1);
+                               // println("sdsd"+ids1);
                                 list1=menu_sql.getMenu(menuMapper,ids1);
                             }
                         }
@@ -300,22 +395,25 @@ public class UserControl {
             }
             else{
                 //普通管理员登录
-                return null;
+                return (JSONObject) new JSONObject().put("data","微红2");
+
             }
         }
 
 
 
 
-      return  null;
+      return (JSONObject) new JSONObject().put("data","cunstomer账号为空");
     }
 private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
-    if(p_id!=0){
+   // println(" pid="+p_id);
+    if(p_id!=0) {
         ids.add(p_id);
-        Menu m=menu_sql.getMenu(menuMapper,p_id);
-        getMenu(menu_sql,m.getPid(),ids);
-    }else{
-        return;
+        Menu m = menu_sql.getMenu(menuMapper, p_id);
+        if(m==null){
+            return;
+        }
+        getMenu(menu_sql, m.getPid(), ids);
     }
 
 }
@@ -325,8 +423,6 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             ids.add(p_id);
             Menu_en m=menu_sql.getMenu(menuEnMapper,p_id);
             getMenuEn(menu_sql,m.getPid(),ids);
-        }else{
-            return;
         }
 
     }
@@ -346,27 +442,31 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "userApi/logout", method = RequestMethod.POST, produces = "text/plain")
     public String logout(HttpServletRequest request){
         String token=null;
+
+
         token=request.getHeader("batoken");
-        System.out.println("token"+token);
+        println("token"+token);
 
         Customer customer=(Customer)  redisUtil.get(token);
+        String lang=customer.getLang();
         redisUtil.set("tokenId:"+customer.getCustomerkey() , "", ExpireTime);
         //设置新的token
       //  redisUtil.set("tokenId:"+customer.getCustomerkey() , toketn, ExpireTime);
         //设置token对应内容
         redisUtil.set(token, "", ExpireTime);
-       String  response = JsonConfig.getJson(CODE_ReLogin,null);
+       String  response = JsonConfig.getJson(CODE_ReLogin,null,lang);
         return response;
     }
 
     @RequestMapping(value = "userApi/getInfo", method = RequestMethod.GET, produces = "text/plain")
     public String getInfo(@RequestParam("token") @ParamsNotNull String token){
         Customer customer=(Customer) redisUtil.get(token );
+        String lang=customer.getLang();
         String response=null;
         if(customer!=null){
-            response = JsonConfig.getJson(CODE_OK, customer);
+            response = JsonConfig.getJson(CODE_OK, customer,lang);
         }else{
-            response = JsonConfig.getJson(CODE_ReLogin, null);
+            response = JsonConfig.getJson(CODE_ReLogin, null,lang);
         }
         return response;
     }
@@ -374,7 +474,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public com.alibaba.fastjson.JSONObject getDashboard(HttpServletRequest request){
 
        String token= request.getHeader("batoken");
-        System.out.println("Token="+token);
+        println("Token="+token);
        String a=    "{\n"+
                 "    \"code\": 1,\n"+
                 "    \"msg\": \"\",\n"+
@@ -386,12 +486,11 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         com.alibaba.fastjson.JSONObject jsonObject=JSON.parseObject(a);
         return jsonObject;
     }
-
     //直接导入菜单。执行一次
     @RequestMapping(value = "userApi/setMenu", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public JSONObject setMenu(HttpServletRequest request, HttpServletResponse httpServletResponse, @RequestBody JSONArray json) {
-        System.out.println(json.toString());
+        println(json.toString());
         Gson gson = new Gson();
         ArrayList<Menu> menuArrayList  = gson.fromJson(json.toString(), new TypeToken<List<Menu>>(){}.getType());
         for(Menu menu:menuArrayList){
@@ -401,20 +500,20 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
 
     }
     private Menu getNext(Menu menu){
-       // System.out.println(menu);
+       // println(menu);
         if(menu.getChildren()!=null&&menu.getChildren().size()>0){
-            System.out.println(menu);
+           // println(menu);
             addMenu(menu);
             for(Menu menus:menu.getChildren()){
-             //   System.out.println(menu);
+             //   println(menu);
                  getNext(menus);
             }
         }else{
-            System.out.println(menu);
+          //  println(menu);
             addMenu(menu);
-           // System.out.println("111");
+           // println("111");
         }
-    //    System.out.println("终止");
+    //    println("终止");
       return null;
     }
     private void addMenu(Menu menu){
@@ -460,9 +559,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public JSONObject getRoles(HttpServletRequest request) {
 
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         String project_key=customer.getProject_key();
         if(project_key==null||project_key.length()==0){
-           return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+           return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }else{
             Roles_Sql roles_sql=new Roles_Sql();
           List<Roles> roles=  roles_sql.getAllroles(rolesMapper,project_key);
@@ -482,9 +582,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
 
            int id=Integer.parseInt(ids);
            Customer customer=getCustomer(request);
+        String lang=customer.getLang();
            String project_key=customer.getProject_key();
            if(project_key==null||project_key.length()==0){
-               return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+               return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
            }else{
                Roles_Sql roles_sql=new Roles_Sql();
                Roles roles=  roles_sql.getOneRoles(rolesMapper,id);
@@ -505,7 +606,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         String rules="";
         int id=100;
         for(int i=0;i<jsonArray.size();i++){
-            System.out.println(jsonArray.get(i).toString());
+            println(jsonArray.get(i).toString());
             rules=rules+","+jsonArray.get(i).toString();
             if(Integer.parseInt(jsonArray.get(i).toString())<id){
                 id=Integer.parseInt(jsonArray.get(i).toString());
@@ -517,7 +618,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             case"en":
                 MenuEn_Sql menuEn_sql=new MenuEn_Sql();
                 Menu_en menu=  menuEn_sql.getMenu(menuEnMapper, id);
-                details=menu.getTitle()+"等"+jsonArray.size()+"项";
+                details=menu.getTitle()+"...About "+jsonArray.size()+" Item";
                 break;
             default:
                 Menu_Sql menu_sql=new Menu_Sql();
@@ -541,25 +642,26 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "userApi/Roles/del", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public JSONObject deleteRoles(HttpServletRequest request, @RequestBody JSONArray json) {
-        System.out.println(json.toString());
+        println(json.toString());
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(json==null||json.size()==0){
-            return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+            return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
         }else{
             int id =0;
             Customer_sql customer_sql=new Customer_sql();
             for(Object jsonObject:json){
                 try {
-                    System.out.println(jsonObject.toString());
+                    println(jsonObject.toString());
                      id = Integer.parseInt(jsonObject.toString());
                    boolean status= customer_sql.check(customerMapper,id,customer.getUserkey());
                    if(status){
-                       System.out.println("1");
-                       return JsonConfig.getJsonObj(CODE_10,CODE_UNBIND);
+                       println("1");
+                       return JsonConfig.getJsonObj(CODE_10,CODE_UNBIND,lang);
                    }
                 }catch (Exception e){
-                    System.out.println("2"+e.getMessage());
-                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+                    println("2"+e.getMessage());
+                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
                 }
             }
             Roles_Sql roles_sql=new Roles_Sql();
@@ -568,11 +670,11 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                     id = Integer.parseInt(jsonObject.toString());
                     roles_sql.delete(rolesMapper,id);
                 }catch (Exception e){
-                    System.out.println("3");
-                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+                    println("3");
+                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
                 }
             }
-            return JsonConfig.getJsonObj(CODE_OK,"");
+            return JsonConfig.getJsonObj(CODE_OK,"",lang);
         }
 
     }
@@ -580,11 +682,12 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "userApi/Roles/add", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public JSONObject addRoles(HttpServletRequest request, HttpServletResponse httpServletResponse, @RequestBody JSONObject json) {
-        System.out.println(json.toString());
+        println(json.toString());
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         String project_key=customer.getProject_key();
         if(project_key==null||project_key.length()==0){
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }else{
 
             Roles_Sql roles_sql=new Roles_Sql();
@@ -595,26 +698,30 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             String rules="";
             int id=100;
             for(int i=0;i<jsonArray.size();i++){
-                System.out.println(jsonArray.get(i).toString());
+                println(jsonArray.get(i).toString());
                 rules=rules+","+jsonArray.get(i).toString();
                 if(Integer.parseInt(jsonArray.get(i).toString())<id){
                     id=Integer.parseInt(jsonArray.get(i).toString());
                 }
             }
-            String lang=customer.getLang();
+            println("id="+id);
+
             String details="";
-            switch (lang){
-                case"en":
-                    MenuEn_Sql menuEn_sql=new MenuEn_Sql();
-                    Menu_en menu=  menuEn_sql.getMenu(menuEnMapper, id);
-                    details=menu.getTitle()+"等"+jsonArray.size()+"项";
-                    break;
-                default:
-                    Menu_Sql menu_sql=new Menu_Sql();
-                    Menu menu1=  menu_sql.getMenu(menuMapper, id);
-                    details=menu1.getTitle()+"等"+jsonArray.size()+"项";
-                    break;
-            }
+            try {
+                switch (lang) {
+                    case "en":
+                        MenuEn_Sql menuEn_sql = new MenuEn_Sql();
+                        Menu_en menu = menuEn_sql.getMenu(menuEnMapper, id);
+                        details=menu.getTitle()+"... About "+jsonArray.size()+" Item";
+                        break;
+                    default:
+                        Menu_Sql menu_sql = new Menu_Sql();
+                        Menu menu1 = menu_sql.getMenu(menuMapper, id);
+                        details = menu1.getTitle() + "等" + jsonArray.size() + "项";
+                        break;
+                }
+
+
             roles.setDetails(details);
             roles.setRuless(rules);
             roles.setUser_key(customer.getUserkey());
@@ -623,7 +730,11 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             JSONObject data = new JSONObject();
             data.put("code",1);
             data.put("msg","ok");
-            return data;
+            return data; }
+            catch (Exception e){
+                println(e.getMessage());
+                return null;
+            }
         }
     }
 
@@ -633,6 +744,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject getCustomer1(HttpServletRequest request) {
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         String quickSearch=request.getParameter("quickSearch");
         if(quickSearch==null){
             quickSearch="";
@@ -652,7 +764,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                     int group_arr[]=new int[ids.length];
                     int i=0;
                     for(String d:ids){
-                        System.out.println(d);
+                        println(d);
                        Roles roles= roles_sql.getOneRoles(rolesMapper,Integer.parseInt(d));
                        if(roles==null){
                            continue;
@@ -668,7 +780,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             data.put("data",customerList);
             return data;
         }
-        return JsonConfig.getJsonObj(CODE_noP,CODE_noP_txt);
+        return JsonConfig.getJsonObj(CODE_noP,CODE_noP_txt,lang);
     }
 
     //添加项目管理员
@@ -676,22 +788,23 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject addCustomer(HttpServletRequest request,@RequestBody JSONObject jsonObject) {
         Customer customer=getCustomer(request);
-        System.out.println(jsonObject.toString());
+        String lang=customer.getLang();
+        println(jsonObject.toString());
         if(customer.getType()!=1){
-            return JsonConfig.getJsonObj(CODE_noP,null);
+            return JsonConfig.getJsonObj(CODE_noP,null,lang);
         }
         Customer customer1=new Gson().fromJson(jsonObject.toString(),new TypeToken<Customer>(){}.getType());
         Customer_sql customer_sql=new Customer_sql();
         boolean status= customer_sql.checkUser(customerMapper,customer1);
         if(status){
-            return JsonConfig.getJsonObj(CODE_REPEAT,null);
+            return JsonConfig.getJsonObj(CODE_REPEAT,null,lang);
         }else{
             customer1.setProject_key(customer.getProject_key());
             customer1.setUserkey(customer.getUserkey());
             SimpleDateFormat sdf = new SimpleDateFormat();// 格式化时间
             sdf.applyPattern("yyyy-MM-dd HH:mm:ss");// a为am/pm的标记
             Date date = new Date();// 获取当前时间
-            //   System.out.println("现在时间：" + sdf.format(date)); // 输出已经格式化的现在时间（24小时制）
+            //   println("现在时间：" + sdf.format(date)); // 输出已经格式化的现在时间（24小时制）
             String customerkey = customer1.getUserkey()+"_"+Base64.getEncoder().encodeToString((customer1.getUsername() + "_" + date.getTime()).getBytes()).replaceAll("\\+", "");
             customer1.setCreate_time(sdf.format(date));
             customer1.setCustomerkey(customerkey);
@@ -704,14 +817,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 }
             }
             else{
-                return  JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+                return  JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
             }
             customer1.setRoles_id(roles_ids);
            int id= customer_sql.addUser(customerMapper,customer1);
            if(id>0){
-               return JsonConfig.getJsonObj(CODE_OK,null);
+               return JsonConfig.getJsonObj(CODE_OK,null,lang);
            }else{
-               return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+               return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
            }
         }
     }
@@ -721,18 +834,19 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject updateCustomer(HttpServletRequest request,@RequestBody JSONObject jsonObject) {
         Customer customer=getCustomer(request);
-        System.out.println(jsonObject.toString());
+        String lang=customer.getLang();
+        println(jsonObject.toString());
         if(customer.getType()!=1){
-            return JsonConfig.getJsonObj(CODE_noP,null);
+            return JsonConfig.getJsonObj(CODE_noP,null,lang);
         }
         Customer customer1=new Gson().fromJson(jsonObject.toString(),new TypeToken<Customer>(){}.getType());
         Customer_sql customer_sql=new Customer_sql();
         Customer customer2= customer_sql.getCustomer(customerMapper,customer1.getId());
         if(!customer1.getUsername().equals(customer2.getUsername())){
-            return JsonConfig.getJsonObj(CODE_noC,null);
+            return JsonConfig.getJsonObj(CODE_noC,null,lang);
         }
         if(customer2==null){
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }else{
             customer1.setProject_key(customer2.getProject_key());
             customer1.setUserkey(customer2.getUserkey());
@@ -750,14 +864,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 }
             }
             else{
-                return  JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+                return  JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
             }
             customer1.setRoles_id(roles_ids);
             int id= customer_sql.updateCustomer(customerMapper,customer1);
             if(id>0){
-                return JsonConfig.getJsonObj(CODE_OK,null);
+                return JsonConfig.getJsonObj(CODE_OK,null,lang);
             }else{
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
         }
     }
@@ -767,17 +881,18 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject getCustomer(HttpServletRequest request,@RequestParam("id") @ParamsNotNull String id) {
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getType()!=1){
-            return JsonConfig.getJsonObj(CODE_noP,null);
+            return JsonConfig.getJsonObj(CODE_noP,null,lang);
         }
 
         Customer_sql customer_sql=new Customer_sql();
         Customer customer2= customer_sql.getCustomer(customerMapper,Integer.parseInt(id));
         if(customer2==null){
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }else{
             if(customer2.getRoles_id()==null||customer2.getRoles_id().equals("")){
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
             Roles_Sql roles_sql=new Roles_Sql();
             String ids[]=customer2.getRoles_id().substring(1).split("-");
@@ -790,8 +905,8 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                     roles_id[i]=roles.getId();
                 }
             }
-            JSONObject jsonObject=JsonConfig.getJsonObj(CODE_OK,customer2);
-            System.out.println(jsonObject.toString());
+            JSONObject jsonObject=JsonConfig.getJsonObj(CODE_OK,customer2,lang);
+            println(jsonObject.toString());
             JSONObject jsonObject1=jsonObject.getJSONObject("data");
             jsonObject1.put("group_name_arr",roles_name);
             jsonObject1.put("group_arr",roles_id);
@@ -805,28 +920,29 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject deleteCustomer(HttpServletRequest request,@RequestBody JSONArray json) {
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getType()!=1){
-            return JsonConfig.getJsonObj(CODE_noP,null);
+            return JsonConfig.getJsonObj(CODE_noP,null,lang);
         }
         Customer_sql customer_sql=new Customer_sql();
         if(json.size()<=0){
-            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
         }
         int id=0;
         for(Object jsonObject:json){
             try {
-                System.out.println(jsonObject.toString());
+                println(jsonObject.toString());
                 id = Integer.parseInt(jsonObject.toString());
                 int status= customer_sql.deleteCustomer(customerMapper,id);
                 if(status<0){
-                    return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                    return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
                 }
             }catch (Exception e){
-                System.out.println("2"+e.getMessage());
-                return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+                println("2"+e.getMessage());
+                return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
             }
         }
-        return JsonConfig.getJsonObj(CODE_OK,null);
+        return JsonConfig.getJsonObj(CODE_OK,null,lang);
     }
 
 
@@ -836,6 +952,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public JSONObject getLogs(HttpServletRequest request) {
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         String quickSearch=request.getParameter("quickSearch");
         String pages=request.getParameter("page");
         String limits=request.getParameter("limit");
@@ -854,37 +971,38 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         if(customer.getType()==1){
             Logs_Sql logs_sql=new Logs_Sql();
             PageLogs pageLogs= logs_sql.selectPageLogs(logsMapper,page,limit,quickSearch,customer.getUserkey(),customer.getProject_key());
-            JSONObject jsonObject= JsonConfig.getJsonObj(CODE_OK,pageLogs.getMapList());
+            JSONObject jsonObject= JsonConfig.getJsonObj(CODE_OK,pageLogs.getMapList(),lang);
             jsonObject.put("count",pageLogs.getTotal());
             return jsonObject;
         }
-        return JsonConfig.getJsonObj(CODE_noP,CODE_noP_txt);
+        return JsonConfig.getJsonObj(CODE_noP,CODE_noP_txt,lang);
     }
     //删除角色
     @RequestMapping(value = "userApi/Logs/del", method = RequestMethod.POST, produces = "application/json")
     @ResponseBody
     public JSONObject deleteLogs(HttpServletRequest request, @RequestBody JSONArray json) {
-        System.out.println(json.toString());
+        println(json.toString());
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(json==null||json.size()==0){
-            return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+            return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
         }else{
             int id =0;
             List<Integer> ids=new ArrayList<>();
             for(Object jsonObject:json){
                 try {
-                    System.out.println(jsonObject.toString());
+                    println(jsonObject.toString());
                     id = Integer.parseInt(jsonObject.toString());
                     ids.add(id);
                 }catch (Exception e){
-                    System.out.println("2"+e.getMessage());
-                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt);
+                    println("2"+e.getMessage());
+                    return JsonConfig.getJsonObj(CODE_DR,CODE_DR_txt,lang);
                 }
             }
-            System.out.println(ids);
+            println("IDs="+ids+"");
             int status=logsMapper.deleteBatchIds(ids);
-            System.out.println(status);
-            return JsonConfig.getJsonObj(CODE_OK,"");
+            println("状态="+status);
+            return JsonConfig.getJsonObj(CODE_OK,"",lang);
         }
 
     }
@@ -908,163 +1026,19 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String createCustomer(HttpServletRequest request, @RequestParam("userName") @ParamsNotNull String userName, @RequestParam("passWord") @ParamsNotNull String passWord, @RequestParam("nickName")  String nickName, @RequestParam("permission_key")  @ParamsNotNull String permission_key,@RequestParam("phoneNumber")  @ParamsNotNull String phoneNumber) {
         String response = null;
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getPermission()==null||customer.getPermission().getEdituser()==0){
-            return JsonConfig.getJson(CODE_noP,null);
+            return JsonConfig.getJson(CODE_noP,null,lang);
         }
        else if(customer.getPermission().getEdituser()==1 ){
-            System.out.println("对象为" + customer.getUsername());
+            println("对象为" + customer.getUsername());
             User user = new User(userName, passWord,  nickName, phoneNumber,permission_key);
             User_sql user_sql = new User_sql();
             int result = user_sql.addUser(userMapper, user);
             if(result==-1){
-                response = JsonConfig.getJson(CODE_REPEAT, null);
+                response = JsonConfig.getJson(CODE_REPEAT, null,lang);
             }else{
-                response = JsonConfig.getJson(CODE_OK, null);
-            }
-        }
-        return response;
-    }
-
-
-    //创建部门
-
-    @RequestMapping(value = "userApi/addDepartment", method = RequestMethod.POST, produces = "text/plain")
-    public String addDepartment(HttpServletRequest request, @RequestParam("name") @ParamsNotNull String name, @RequestParam("p_id") @ParamsNotNull int p_id) {
-        String response = null;
-        Customer customer = getCustomer(request);
-        if(customer.getPermission()==null||customer.getPermission().getEditdepartment()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(customer.getPermission().getEditdepartment()==1 ){
-            System.out.println("对象为" + customer.getUsername());
-            Department department=new Department(name,customer.getUserkey(),p_id,customer.getCustomerkey());
-            Department_Sql departmentSql = new Department_Sql();
-            boolean result = departmentSql.addDepartment(departmentMapper, department);
-            if(result){
-                response = JsonConfig.getJson(CODE_OK, null);
-            }else{
-                response = JsonConfig.getJson(CODE_REPEAT, null);
-            }
-        }
-        return response;
-    }
-
-    //获取全部部门
-
-   /* @RequestMapping(value = "userApi/getDepartment", method = RequestMethod.GET, produces = "text/plain")
-    public String getDepartment(HttpServletRequest request) {
-        String response = null;
-        Customer customer = getCustomer(request);
-        if(customer.getPermission()==null||customer.getPermission().getLookdepartment()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(customer.getPermission().getLookdepartment()==1 ){
-            System.out.println("对象为" + customer.getUsername());
-            Department_Sql departmentSql = new Department_Sql();
-            List<Department> departments = departmentSql.getAllDepartment(departmentMapper,customer.getUserkey());
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("code", CODE_OK);
-            jsonObject.put("msg", CODE_OK_txt);
-
-            List<Department> departmentList=new ArrayList<>();
-            java.util.Map<Integer,Department> departmentMap=new HashMap<>();
-            for(int i=0;i<departments.size();i++){
-                Department department=departments.get(i);
-                Department department1=departmentMap.get(department.getP_id());
-                if(department1==null){
-                    departmentMap.put(department.getId(),department);
-                    departmentList.add(department);
-                }else{
-                    departmentMap.put(department.getId(),department);
-                    department1.addDepartment(department);
-                }
-            }
-             jsonObject.put("data", departmentList);
-            response=jsonObject.toString();
-            response=response.replaceAll("name","title");
-            response=response.replaceAll("departmentlist","children");
-
-        }
-        return response;
-    }
-*/
-    //添加人员
-    /*@RequestMapping(value = "userApi/addPerson", method = RequestMethod.POST, produces = "text/plain")
-    public String addPerson(HttpServletRequest request, @RequestParam("name") @ParamsNotNull String name,
-                            @RequestParam("sex") @ParamsNotNull int sex,
-                            @RequestParam("idcard") @ParamsNotNull String idcard,@RequestParam("phone") @ParamsNotNull String phone, @RequestParam("p_id") @ParamsNotNull int p_id) {
-        String response = null;
-        int isopen;
-
-        Customer customer = getCustomer(request);
-        if(customer.getPermission()==null||customer.getPermission().getEditperson()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(customer.getPermission().getEditperson()==1 ){
-            System.out.println("对象为" + customer.getUsername());
-            String pathss=null;
-            Person person=new Person( name, phone, sex, pathss, p_id, "", 0,idcard, customer.getUserkey(),customer.getCustomerkey());
-            Person_Sql person_sql=new Person_Sql();
-          boolean status=  person_sql.addPerson(personMapper,person);
-          if(status){
-              response = JsonConfig.getJson(CODE_OK, null);
-              personMap.put(person.getIdcard(),person);
-          }else{
-              response = JsonConfig.getJson(CODE_REPEAT, null);
-          }
-        }
-        return response;
-    }
-*/
-
-    //编辑人员信息
-    @RequestMapping(value = "userApi/editPerson", method = RequestMethod.POST, produces = "text/plain")
-    public String editPerson(HttpServletRequest request, @RequestParam("name") @ParamsNotNull String name,
-                            @RequestParam("sex") @ParamsNotNull int sex,
-                            @RequestParam("idcard") @ParamsNotNull String idcard,@RequestParam("phone") @ParamsNotNull String phone,@RequestParam("p_id") @ParamsNotNull int p_id) {
-        String response = null;
-        Customer user1 = getCustomer(request);
-        if(user1.getPermission()==null||user1.getPermission().getEditperson()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(user1.getPermission().getEditperson()==1 ){
-            System.out.println("对象为" + user1.getUsername());
-            Person person=personMap.get(idcard);
-            if(person!=null){
-                String pathss=null;
-               /* if(file!=null){
-                    File path = new File(paths);
-
-                    if (!path.exists()) {
-                        System.out.println("文件夹不存在创建=" + path.mkdirs());
-                    }
-                    try {
-                        file.transferTo(new File(path.getPath() + "/" + idcard + ".png"));
-                        pathss =path.getPath() + "/" + idcard + ".png";
-                    }catch (Exception e){
-                        System.out.println("保存文件异常");
-                    }
-                }
-
-                if(bind_mac!=null&&bind_mac.length()>0){
-                    person.setBind_mac(bind_mac);
-                    person.setIsbind(1);
-                }else{
-                    person.setIsbind(0);
-                }*/
-                person.setName(name);
-                person.setIsopen(0);
-                  person.setPhone(phone);
-               /*     person.setPhoto(host+"/userApi/getPhoto?sn="+person.getIdcard());*/
-                person.setDepartment_id(p_id);
-                person.setSex(sex);
-            }
-            Person_Sql person_sql=new Person_Sql();
-            boolean status=  person_sql.update(personMapper,person);
-            if(status){
-                response = JsonConfig.getJson(CODE_OK, null);
-            }else{
-                response = JsonConfig.getJson(CODE_REPEAT, null);
+                response = JsonConfig.getJson(CODE_OK, null,lang);
             }
         }
         return response;
@@ -1084,7 +1058,8 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         String name=json.getString("project_name");
         String info=json.getString("project_info");
         Customer customer = getCustomer(request);
-        System.out.println("2665"+json.toString()+response.toString());
+        String lang=customer.getLang();
+        println("2665"+json.toString()+response.toString());
         if(json==null){
             return response;
         }
@@ -1096,7 +1071,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             Project project=new Project(name,info,customer.getUserkey());
            boolean status= project_sql.addProject(projectMapper,project);
            if(status){
-               response=JsonConfig.getJsonObj(CODE_OK,"OK");
+               response=JsonConfig.getJsonObj(CODE_OK,"OK",lang);
            }
         }
         return response;
@@ -1111,13 +1086,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             name="";
         }
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getType()!=1){
             return response;
         }
         if (customer.getCustomerkey() != null && customer.getCustomerkey().length() > 0) {
             Project_Sql project_sql = new Project_Sql();
             List<Project> list = project_sql.getAllProject(projectMapper, customer.getUserkey(), name);
-            response = JsonConfig.getJsonObj(CODE_OK, list);
+            response = JsonConfig.getJsonObj(CODE_OK, list,lang);
         }
         return response;
     }
@@ -1129,6 +1105,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             return response;
         }
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getType()!=1){
             return response;
         }
@@ -1136,10 +1113,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             Project_Sql project_sql = new Project_Sql();
             int status = project_sql.delete(projectMapper, project_key,customer.getUserkey());
             if(status>0){
-                response = JsonConfig.getJsonObj(CODE_OK, "");
+                response = JsonConfig.getJsonObj(CODE_OK, "",lang);
             }
             else{
-                response = JsonConfig.getJsonObj(CODE_SQL_ERROR, "");
+                response = JsonConfig.getJsonObj(CODE_SQL_ERROR, "",lang);
             }
         }
         return response;
@@ -1147,7 +1124,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "userApi/updateProject", method = RequestMethod.POST, produces = "application/json")
     public JSONObject updateProject(HttpServletRequest request, @RequestBody JSONObject json){
         JSONObject response =JSON.parseObject("{\"msg\":\"用户权限异常\",\"code\":2}");
-        System.out.println(json.toString());
+        println(json.toString());
         String user_key=json.getString("user_key");
         String name=json.getString("project_name");
         String info=json.getString("project_info");
@@ -1157,6 +1134,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         }
 
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         if(customer.getType()!=1){
             return response;
         }else if(!customer.getUserkey().equals(user_key)){
@@ -1170,9 +1148,9 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             String time = sdf.format(date);
             int status = project_sql.update(projectMapper, project_key,customer.getUserkey(),info, name,time);
             if(status>0){
-                response = JsonConfig.getJsonObj(CODE_OK, "");
+                response = JsonConfig.getJsonObj(CODE_OK, "",lang);
             }else{
-                response = JsonConfig.getJsonObj(CODE_SQL_ERROR, "");
+                response = JsonConfig.getJsonObj(CODE_SQL_ERROR, "",lang);
             }
         }
         return response;
@@ -1182,7 +1160,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String setGatewayProject(HttpServletRequest request, @RequestParam("address") @ParamsNotNull String address, @RequestParam("config_key") String config_key, @RequestParam("config_name") String config_name) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
-
+        String lang=customer.getLang();
         if (customer != null) {
             Gateway_sql gateway_sql = new Gateway_sql();
             Gateway gateway = (Gateway) redisUtil.get(redis_key_gateway + address);
@@ -1190,7 +1168,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             gateway.setConfig_name(config_name);
             redisUtil.set(redis_key_gateway + address, gateway);
             gateway_sql.updateGateway(gatewayMapper, gateway);
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
         }
         return response;
     }
@@ -1199,15 +1177,15 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String addRules(HttpServletRequest request, @RequestParam("name") @ParamsNotNull String name, @ParamsNotNull @RequestParam("type") int type, @ParamsNotNull @RequestParam("server") String server, @ParamsNotNull @RequestParam("port") int port) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
-
+        String lang=customer.getLang();
         if (customer.getCustomerkey() != null && customer.getCustomerkey().length() > 0) {
             Rules rules = new Rules(name, type, server, port,customer.getUserkey(), customer.getCustomerkey());
             Rules_sql rules_sql = new Rules_sql();
             if (rules_sql.addRules(rulesMapper, rules)) {
                 rulesMap.put(rules.getRule_key(), rules);
-                response = JsonConfig.getJson(CODE_OK, null);
+                response = JsonConfig.getJson(CODE_OK, null,lang);
             } else {
-                response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null);
+                response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null,lang);
             }
         }
         return response;
@@ -1216,7 +1194,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "userApi/getStatus", method = RequestMethod.GET, produces = "text/plain")
     public String getStatus() {
         String response = "默认参数";
-        response = JsonConfig.getJson(CODE_OK, null);
+        response = JsonConfig.getJson(CODE_OK, null,"en");
         return response;
     }
 
@@ -1225,6 +1203,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String bindRules(HttpServletRequest request, @RequestParam("projectKey") @ParamsNotNull String projectKey, @ParamsNotNull @RequestParam("ruleKey") String ruleKey, @ParamsNotNull @RequestParam("rules_name") String rules_name) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         if (customer.getCustomerkey() != null && customer.getCustomerkey().length() > 0) {
             Gateway_config gatewayConfig = gatewayConfigMap.get(projectKey);
             gatewayConfig.setRules_name(rules_name);
@@ -1232,10 +1211,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             GatewayConfig_sql project_sql = new GatewayConfig_sql();
             if (project_sql.bindRules(gatewayConfigMapper, gatewayConfig, ruleKey, rules_name)) {
                 gatewayConfigMap.put(projectKey, gatewayConfig);
-                response = JsonConfig.getJson(CODE_OK, null);
+                response = JsonConfig.getJson(CODE_OK, null,lang);
 
             } else {
-                response = JsonConfig.getJson(CODE_SQL_ERROR, null);
+                response = JsonConfig.getJson(CODE_SQL_ERROR, null,lang);
             }
         }
         return response;
@@ -1246,7 +1225,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public JSONObject getAllGateway(HttpServletRequest request){
         Enumeration<String> name=request.getParameterNames();
         while(name.hasMoreElements()) {
-            System.out.println(name.nextElement());
+            println(name.nextElement());
         }
         String quickSearch=request.getParameter("quickSearch");
         String page=request.getParameter("page");
@@ -1264,8 +1243,8 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         String response = "默认参数";
         Customer customer=(Customer) redisUtil.get(token);
         Gateway_sql gateway_sql = new Gateway_sql();
-        PageGateway pageGateway = gateway_sql.selectPageGateway(gatewayMapper, Integer.valueOf(page), Integer.valueOf(limit), quickSearch, customer.getUserkey(),customer.getProject_key());
-        //System.out.println("网关信息="+pageGateway.toString());
+        PageGateway pageGateway = gateway_sql.selectPageGateway(gatewayMapper, Integer.parseInt(page), Integer.parseInt(limit), quickSearch, customer.getUserkey(),customer.getProject_key());
+        //println("网关信息="+pageGateway.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("code", CODE_OK);
 
@@ -1276,13 +1255,17 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         for (Gateway gateway : gateways) {
          //   Gateway gateway1=new Gateway();
 
-           // System.out.println(gateway);
+           // println(gateway);
            Gateway gateway1 = (Gateway) redisUtil.get(redis_key_gateway + gateway.getAddress());
+
            if(gateway1!=null){
+               gateway.setLasttime(gateway1.getLasttime());
                gateway.setUp_time(gateway1.getUp_time());
                gateway.setCRC_FLAG(gateway1.getCRC_FLAG());
            }
-
+        else{
+               println("网关为空"+gateway.getAddress());
+           }
             String syn = (String) redisUtil.get(redis_key_project_sys + gateway.getAddress());
             Integer revicecount = (Integer) redisUtil.get(redis_key_gateway_revice_count + gateway.getAddress());
             if (revicecount == null) {
@@ -1296,7 +1279,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 gateway.setSynStr(syn);
             }
         }
-       // System.out.println(pageGateway.getGatewayList());
+       // println(pageGateway.getGatewayList());
         jsonObject.put("data", pageGateway.getGatewayList());
 
         return jsonObject;
@@ -1306,9 +1289,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
 
     @RequestMapping(value = "/userApi/gateway/add", method = RequestMethod.POST,produces = "application/json")
     public JSONObject addGateway(HttpServletRequest request,@RequestBody JSONObject jsonObject) {
-        System.out.println(jsonObject.toString());
+        println(jsonObject.toString());
        JSONObject response = null;
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         Gateway gateway=new Gson().fromJson(jsonObject.toString(),new TypeToken<Gateway>(){}.getType());
         gateway.setAddress(gateway.getAddress().toLowerCase());
         gateway.setCreate_time(System.currentTimeMillis()/1000);
@@ -1319,7 +1303,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         if(gateway.getConfig_key()!=null&&!gateway.getConfig_key().equals("noConfig_key")) {
             List<Gateway_config> gateway_configs = gatewayConfigSql.getConfigByKey(gatewayConfigMapper, customer.getUserkey(), customer.getProject_key(), gateway.getConfig_key());
             if (gateway_configs == null || gateway_configs.size() != 1) {
-                return getJsonObj(CODE_SQL_ERROR, null);
+                return getJsonObj(CODE_SQL_ERROR, null,lang);
             } else {
                 gateway.setConfig_name(gateway_configs.get(0).getName());
                 Gateway_config gatewayConfig= gateway_configs.get(0);
@@ -1327,7 +1311,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 gatewayConfigSql.updateGatewayConfig(gatewayConfigMapper,gatewayConfig);
             }
         }else{
-            String lang=customer.getLang();
+
             if(lang!=null&&lang.equals("en")){
                 gateway.setConfig_name("No Config");
             }else{
@@ -1335,16 +1319,16 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             }
         }
        if(gateway.getMap_key()!=null&&!gateway.getMap_key().equals("nomap")){
-          // System.out.println("动图="+gateway.getMap_key());
+          // println("动图="+gateway.getMap_key());
            Map_Sql map_sql=new Map_Sql();
            List<Map> maps= map_sql.getMapByKey(mapMapper,customer.getUserkey(),customer.getProject_key(),gateway.getMap_key());
            if(maps==null||maps.size()!=1){
-               return getJsonObj(CODE_SQL_ERROR,null);
+               return getJsonObj(CODE_SQL_ERROR,null,lang);
            }else{
                gateway.setMap_name(maps.get(0).getName());
            }
        }else{
-           String lang=customer.getLang();
+
            if(lang!=null&&lang.equals("en")){
                gateway.setConfig_name("No Map");
            }else{
@@ -1354,12 +1338,12 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
        }
         Gateway_sql gateway_sql = new Gateway_sql();
         if (gateway_sql.addGateway(gatewayMapper, gateway)) {
-            response = JsonConfig.getJsonObj(CODE_OK, null);
+            response = JsonConfig.getJsonObj(CODE_OK, null,lang);
             redisUtil.set(redis_key_gateway + gateway.getAddress(), gateway);
             gatewayMap.put(gateway.getAddress(), gateway.getAddress());
             GatewayMap.put(gateway.getAddress(), gateway);
         } else {
-            response = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT, null);
+            response = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT, null,lang);
         }
 
         return response;
@@ -1369,41 +1353,63 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public JSONObject getOneGateway(HttpServletRequest request, @RequestParam("id") @ParamsNotNull String id) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         Gateway_sql gateway_sql=new Gateway_sql();
        Gateway gateway= gateway_sql.getGatewayById(gatewayMapper,Integer.parseInt(id));
         if(gateway!=null){
-            return JsonConfig.getJsonObj(CODE_OK,gateway);
+            return JsonConfig.getJsonObj(CODE_OK,gateway,lang);
         }else{
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }
 
     }
 
     @RequestMapping(value = "userApi/gateway/edit", method = RequestMethod.POST, produces = "application/json")
     public JSONObject editGateway(HttpServletRequest request, @RequestBody JSONObject json) {
-        System.out.println(json.toString());
+        println(json.toString());
         JSONObject response = null;
         Customer customer = getCustomer(request);
-
+        String lang=customer.getLang();
         Gateway_sql gateway_sql = new Gateway_sql();
-        Gateway gateway=new Gson().fromJson(json.toString(),new TypeToken<Gateway>(){}.getType());
-        if(gateway.getAddress()==null||gateway.getAddress().equals("")){
-        //只是更新了同步状态
-           int status= gateway_sql.updateGateway(gatewayMapper,gateway.getId(),gateway.getIsyn());
-           if(status!=-1){
-               response = JsonConfig.getJsonObj(CODE_OK, null);
-               response.put("msg","ok");
-               redisUtil.set(redis_key_gateway + gateway.getAddress(), gateway);
-               gatewayMap.put(gateway.getAddress(), gateway.getAddress());
-               GatewayMap.put(gateway.getAddress(), gateway);
-               return response;
-           }
+        Gateway gateway = new Gson().fromJson(json.toString(), new TypeToken<Gateway>() {}.getType());
+
+        try {
+
+            if (gateway.getAddress() == null || gateway.getAddress().equals("")) {
+                //只是更新了同步状态
+                for(String key:GatewayMap.keySet()){
+                    Gateway gateway1=GatewayMap.get(key);
+                    if(gateway1.getId()==gateway.getId()){
+                        if(gateway1.getConfig_key()==null|| gateway1.getConfig_key().equals("noConfig_key")){
+
+                            return  JsonConfig.getJsonObj(CODE_as, null, lang);
+                        }
+                        int status = gateway_sql.updateGateway(gatewayMapper, gateway.getId(), gateway.getIsyn());
+                        if (status != -1) {
+                            int sync = gateway.getIsyn();
+                            response = JsonConfig.getJsonObj(CODE_OK, null, lang);
+                            response.put("msg", "ok");
+                           // gateway = (Gateway) redisUtil.get(redis_key_gateway + gateway.getAddress());
+                            gateway1.setIsyn(sync);
+                            redisUtil.set(redis_key_gateway + gateway1.getAddress(), gateway1);
+                         //   gatewayMap.put(gateway1.getAddress(), gateway1.getAddress());
+                            GatewayMap.put(gateway1.getAddress(), gateway1);
+                       //    println("更新网关="+gateway1);
+                            return response;
+                        }
+                    }
+
+
+                }
+            }
+        }catch (Exception e){
+            println("异常log="+e.getMessage());
         }
         gateway.setUpdate_time(System.currentTimeMillis()/1000);
         gateway.setProject_key(customer.getProject_key());
         gateway.setUser_key(customer.getUserkey());
         if(gateway.getConfig_key()!=null&&gateway.getConfig_key().equals("noConfig_key")){
-            String lang=customer.getLang();
+
             if(lang!=null&&lang.equals("en")){
                 gateway.setConfig_name("No Config");
             }else{
@@ -1415,7 +1421,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             GatewayConfig_sql gatewayConfigSql=new GatewayConfig_sql();
             List<Gateway_config> gateway_configs= gatewayConfigSql.getConfigByKey(gatewayConfigMapper,customer.getUserkey(),customer.getProject_key(),gateway.getConfig_key());
             if(gateway_configs==null||gateway_configs.size()!=1){
-                return getJsonObj(CODE_SQL_ERROR,null);
+                return getJsonObj(CODE_SQL_ERROR,null,lang);
             }else{
                 gateway.setConfig_name(gateway_configs.get(0).getName());
             }
@@ -1425,7 +1431,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             Map_Sql map_sql=new Map_Sql();
             List<Map> maps= map_sql.getMapByKey(mapMapper,customer.getUserkey(),customer.getProject_key(),gateway.getMap_key());
             if(maps==null||maps.size()!=1){
-                return getJsonObj(CODE_SQL_ERROR,null);
+                return getJsonObj(CODE_SQL_ERROR,null,lang);
             }else{
                 gateway.setMap_name(maps.get(0).getName());
             }
@@ -1434,12 +1440,12 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         }
 
         if (gateway_sql.updateGateway(gatewayMapper, gateway)!=-1) {
-            response = JsonConfig.getJsonObj(CODE_OK, null);
+            response = JsonConfig.getJsonObj(CODE_OK, null,lang);
             redisUtil.set(redis_key_gateway + gateway.getAddress(), gateway);
             gatewayMap.put(gateway.getAddress(), gateway.getAddress());
             GatewayMap.put(gateway.getAddress(), gateway);
         } else {
-            response = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT, null);
+            response = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT, null,lang);
         }
 
         return response;
@@ -1449,6 +1455,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public JSONObject deleteGateway(HttpServletRequest request, @RequestBody JSONArray jsonArray) {
         String response = "默认参数";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         Gateway_sql gateway_sql = new Gateway_sql();
         List<Integer> id=new ArrayList<Integer>();
         for(Object ids:jsonArray){
@@ -1459,14 +1466,93 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         if(id.size()>0){
             int status = gateway_sql.deletes(gatewayMapper, id);
             if(status!=-1){
-                return JsonConfig.getJsonObj(CODE_OK,null);
+                return JsonConfig.getJsonObj(CODE_OK,null,lang);
             }else{
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
         }
 
+    }
+
+    //更新网关固件，网关会在心跳包上报时执行更新
+    @RequestMapping(value = "/userApi/gateway/update", method = RequestMethod.POST, produces = "application/json")
+    public JSONObject updateFirmwareGateway(HttpServletRequest request, @RequestBody JSONObject jsonObject) {
+        String response = "默认参数";
+        Config_Sql configSql=new Config_Sql();
+        String host=configSql.getHost(configMapper);
+        println("收到="+jsonObject);
+        Customer customer = getCustomer(request);
+        String lang=customer.getLang();
+        String ble_version= jsonObject.getString("ble_version");
+        String wifi_version= jsonObject.getString("wifi_version");
+        if(ble_version.isEmpty()||ble_version.equals("不需要升级")||ble_version.equals("No need to upgrade")){
+            ble_version="";
+        }
+        if(wifi_version.isEmpty()||wifi_version.equals("不需要升级")||wifi_version.equals("No need to upgrade")){
+            wifi_version="";
+        }
+        List<Integer> id=new ArrayList<Integer>();
+        JSONArray jsonArray=jsonObject.getJSONArray("ids");
+        for(Object ids:jsonArray){
+            if(ids!=null&& !ids.toString().isEmpty()){
+                id.add(Integer.parseInt(ids.toString()));
+            }
+        }
+        println(""+id);
+        try {
+            if (!id.isEmpty() && !ble_version.equals("")) {
+                QueryWrapper<Ble_firmware> queryWrapper = Wrappers.query();
+                queryWrapper.eq("project_key", customer.getProject_key());
+                queryWrapper.eq("version", ble_version);
+                Ble_firmware bleFirmware = bleMapper.selectOne(queryWrapper);
+                if (bleFirmware != null) {
+                    for (java.util.Map.Entry<String, Gateway> entry : GatewayMap.entrySet()) {
+                        for (int i : id) {
+                            if (entry.getValue().getId() == i) {
+                                Firmware_task firmwareTask = new Firmware_task();
+                                firmwareTask.setCount(3);
+                                String url = "";
+                                url = host + "path=" +bleFirmware.getUrl().replaceAll(":","12471").replaceAll("\\\\","6595");
+                                println(bleFirmware.getUrl()+"url="+bleFirmware.getUrl().replaceAll(":","12471"));
+                                println("url="+url);
+
+                                firmwareTask.setUrl(url);
+                                firmwareTask.setVersion(ble_version);
+                                firmwareTaskHashMap.put("ble_" + entry.getKey(), firmwareTask);
+                            }
+                        }
+
+                    }
+                }
+            }
+            if (!id.isEmpty() && !wifi_version.equals("")) {
+                QueryWrapper<Wifi_firmware> queryWrapper = Wrappers.query();
+                queryWrapper.eq("project_key", customer.getProject_key());
+                queryWrapper.eq("version", wifi_version);
+                Wifi_firmware wifiFirmware = wifiMapper.selectOne(queryWrapper);
+                if (wifiFirmware != null) {
+                    for (java.util.Map.Entry<String, Gateway> entry : GatewayMap.entrySet()) {
+                        for (int i : id) {
+                            if (entry.getValue().getId() == i) {
+                                Firmware_task firmwareTask = new Firmware_task();
+                                firmwareTask.setCount(3);
+                                String url = "";
+                                url = host + "path=" +wifiFirmware.getUrl().replaceAll(":","12471").replaceAll("\\\\","6595");;
+                                firmwareTask.setUrl(url);
+                                firmwareTask.setVersion(wifi_version);
+                                firmwareTaskHashMap.put("wifi_" + entry.getKey(), firmwareTask);
+                            }
+                        }
+                    }
+                }
+            }
+        }catch (Exception e){
+            println("异常="+e);
+        }
+        println("任务="+firmwareTaskHashMap);
+        return JsonConfig.getJsonObj(CODE_OK,null,lang);
     }
 
 
@@ -1530,8 +1616,8 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "/userApi/addConfigGateway", method = RequestMethod.POST, produces = "application/json")
     public JSONObject addConfigGateway(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "config_key") String config_key,@RequestBody JSONArray json) {
         Customer customer=getCustomer(request);
-        System.out.println("输出="+json.toString());
-        System.out.println("key="+config_key+"   "+customer.getUserkey() +"    "+customer.getProject_key() );
+        println("输出="+json.toString());
+        println("key="+config_key+"   "+customer.getUserkey() +"    "+customer.getProject_key() );
         String response = "默认参数";
         Gateway_sql gateway_sql=new Gateway_sql();
         List<Gateway> gatewayList=gateway_sql.getAllGateways(gatewayMapper,customer.getUserkey(),customer.getProject_key(),config_key);
@@ -1550,7 +1636,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                                     gateway.setConfig_name("不关联配置");
                                 }
                                int status= gateway_sql.updateGateway(gatewayMapper,gateway);
-                                 System.out.println("更新="+status);
+                                 println("更新="+status);
                           //  }
                       //  }
                    // }
@@ -1563,7 +1649,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             //GatewayTree tree=new GsonBuilder().disableHtmlEscaping().create().fromJson(json.get(0).toString(),new TypeToken<GatewayTree>(){}.getType());
             GatewayTree tree=null;
             tree=json.getObject(0,GatewayTree.class);
-            System.out.println("名称="+tree.getLabel());
+            println("名称="+tree.getLabel());
             if(tree.getChildren().size()>0){
                 for(GatewayTree gatewayTree:tree.getChildren()){
                     gateway_sql.updateGateway(gatewayMapper,gatewayTree.getId(),config_key,tree.getLabel());
@@ -1595,7 +1681,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         String response = "默认参数";
         GatewayConfig_sql project_sql = new GatewayConfig_sql();
         PageGatewayConfig pageGatewayConfig = project_sql.selectPageConfig(gatewayConfigMapper, Integer.valueOf(page), Integer.valueOf(limit), project_name, userkey);
-        //   System.out.println("网关信息="+pageGatewayConfig.toString());
+        //   println("网关信息="+pageGatewayConfig.toString());
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("code", CODE_OK);
         jsonObject.put("msg", CODE_OK_txt);
@@ -1625,14 +1711,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String addBeaconTag(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "major") Integer major, @ParamsNotNull @RequestParam(value = "minor") Integer minor, @ParamsNotNull @RequestParam(value = "x") Double x, @ParamsNotNull @RequestParam(value = "y") Double y, @ParamsNotNull @RequestParam(value = "projectKey") String projectKey, @ParamsNotNull @RequestParam(value = "projectName") String projectName) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
-
+        String lang=customer.getLang();
         Btag_Sql btag_sql = new Btag_Sql();
         boolean status = btag_sql.addBeaconTag(bTagMapper, new Beacon_tag(name, major, minor, projectKey, customer.getUserkey(), x, y, projectName,customer.getCustomerkey()));
         if (status) {
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
             //需要把信标信息添加到定位列表中、
         } else {
-            response = JsonConfig.getJson(CODE_REPEAT, null);
+            response = JsonConfig.getJson(CODE_REPEAT, null,lang);
         }
         return response;
     }
@@ -1641,17 +1727,17 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String editBeaconTag(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "id") Integer id, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "major") Integer major, @ParamsNotNull @RequestParam(value = "minor") Integer minor, @ParamsNotNull @RequestParam(value = "x") Double x, @ParamsNotNull @RequestParam(value = "y") Double y, @ParamsNotNull @RequestParam(value = "projectKey") String projectKey, @ParamsNotNull @RequestParam(value = "projectName") String projectName) {
         String response = "默认参数";
         Customer customer = getCustomer(request);
-
+        String lang=customer.getLang();
         Btag_Sql btag_sql = new Btag_Sql();
 
         Beacon_tag beacon_tag = new Beacon_tag(id, name, major, minor, projectKey, customer.getUserkey(), x, y, projectName,customer.getCustomerkey());
         boolean status = btag_sql.update(bTagMapper, beacon_tag);
         beacon_tagMap = btag_sql.getAllBeacon(bTagMapper,customer.getUserkey());
         if (status) {
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
             //需要把信标信息添加到定位列表中、
         } else {
-            response = JsonConfig.getJson(CODE_SQL_ERROR, null);
+            response = JsonConfig.getJson(CODE_SQL_ERROR, null,lang);
         }
         return response;
     }
@@ -1660,15 +1746,16 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String deleteProjecta(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "projectkey") String projectkey) {
         String response = "默认参数";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         GatewayConfig_sql project_sql = new GatewayConfig_sql();
         int status = project_sql.delete(gatewayConfigMapper, projectkey, user.getUserkey());
         if (status >= 0) {
             //删除缓存数据
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
         //    redisUtil.del(redis_key_project_onLine + projectkey);
             gatewayConfigMap.remove(projectkey);
             //把网关全部归类到默认配置下
@@ -1683,85 +1770,16 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             }
 
         } else {
-            response = JsonConfig.getJson(CODE_SQL_ERROR, null);
+            response = JsonConfig.getJson(CODE_SQL_ERROR, null,lang);
         }
         return response;
     }
 
 
-    @RequestMapping(value = "/userApi/getUserFirmwareVersion", method = RequestMethod.GET, produces = "text/plain")
-    public String getUserFirmwareVersion(HttpServletRequest request) {
-        String response = "默认参数";
-        Customer user = getCustomer(request);
-        if (user == null) {
-            response = JsonConfig.getJson(CODE_OFFLINE, null);
-            return response;
-        }
-        Wifi wifi = new Wifi();
-        List<Wifi_firmware> wifi_firmware = wifi.getCustomerVersion(wifiMapper, user.getUserkey());
-        Ble ble = new Ble();
-        List<Ble_firmware> ble_firmware = ble.getCustomerVersion(bleMapper, user.getUserkey());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", constant.code_ok);
-        jsonObject.put("type", "getFirmwareResponse");
-        if (wifi_firmware == null) {
-            jsonObject.put("wifi", "null");
-        } else {
-            jsonObject.put("wifi", wifi_firmware);
-        }
-        if (ble_firmware == null) {
-            jsonObject.put("ble", "null");
-        } else {
-            jsonObject.put("ble", ble_firmware);
-        }
-        //   System.out.println("json="+jsonObject.toString());
-        return jsonObject.toString();
-    }
-
-    @RequestMapping(value = "/userApi/getBleVersion", method = RequestMethod.GET, produces = "text/plain")
-    public String getBleVersion(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "page") String page,
-                                @RequestParam(value = "remake") String remake,
-                                @RequestParam(value = "version") String version,
-                                @ParamsNotNull @RequestParam(value = "limit") String limit) {
-        Customer user = getCustomer(request);
-        String response = "默认参数";
-        Ble ble = new Ble();
-        PageBleVersion pageBleVersion = ble.selectPageBleVersion(bleMapper, Integer.valueOf(page), Integer.valueOf(limit), remake, version, user.getUserkey());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", pageBleVersion.getTotal());
-        jsonObject.put("data", pageBleVersion.getBle_firmwares());
-        response = jsonObject.toString();
-        return response;
-    }
-
-    @RequestMapping(value = "/userApi/deleteBleVersion", method = RequestMethod.GET, produces = "text/plain")
-    public String deleteBleVersion(HttpServletRequest request, @RequestParam(value = "version") String version) {
-        //   System.out.println("请求的地址"+request.getContextPath());
-        // System.out.println("请求的地址"+request.getRequestURI());
-        // System.out.println("请求的地址"+request.getServletPath());
-        // System.out.println("请求的地址"+request.getServerPort());
-        // System.out.println("请求的地址"+request.getLocalPort());
-        Customer user = getCustomer(request);
-        String response = "默认参数";
-        if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
-            return response;
-        }
-        Ble ble = new Ble();
-        int status = ble.delete(bleMapper, user.getUserkey(), version);
-        if (status != -1) {
-            response = JsonConfig.getJson(CODE_OK, null);
-        } else {
-            response = JsonConfig.getJson(CODE_SQL_ERROR, null);
-        }
-        return response;
-
-    }
 
 
-    @RequestMapping(value = "/userApi/getWifiVersion", method = RequestMethod.GET, produces = "text/plain")
+
+   /* @RequestMapping(value = "/userApi/getWifiVersion", method = RequestMethod.GET, produces = "text/plain")
     public String getWifiVersion(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "page") String page,
                                  @RequestParam(value = "remake") String remake,
                                  @RequestParam(value = "version") String version,
@@ -1777,41 +1795,43 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         jsonObject.put("data", pageBleVersion.getWifi_firmwares());
         response = jsonObject.toString();
         return response;
-    }
+    }*/
 
-    @RequestMapping(value = "/userApi/deleteWifiVersion", method = RequestMethod.GET, produces = "text/plain")
+  /*  @RequestMapping(value = "/userApi/deleteWifiVersion", method = RequestMethod.GET, produces = "text/plain")
     public String deleteWifiVersion(HttpServletRequest request, @RequestParam(value = "version") String version) {
 
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         String response = "默认参数";
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Wifi wifi = new Wifi();
         int status = wifi.delete(wifiMapper, user.getUserkey(), version);
         if (status != -1) {
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
         } else {
-            response = JsonConfig.getJson(CODE_SQL_ERROR, null);
+            response = JsonConfig.getJson(CODE_SQL_ERROR, null,lang);
         }
         return response;
 
     }
-
+*/
 
     @RequestMapping(value = "/userApi/updateProjectaa", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
     @ResponseBody
     public String getByJSON(HttpServletRequest request, @RequestBody JSONObject json) {
         String response = "";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         // 直接将json信息打印出来
 
-        //    System.out.println("收到"+json.toString());
+        //    println("收到"+json.toString());
         String type = json.getJSONObject("data").getJSONObject("data").getString("cmd");
         String key = json.getString("key");
         Gateway_config gatewayConfig = gatewayConfigMap.get(key);
@@ -1924,13 +1944,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         gatewayConfigMap.put(key, gatewayConfig);
         int status = project_sql.updateGatewayConfig(gatewayConfigMapper, gatewayConfig);
         if (status != -1) {
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
         } else {
-            response = JsonConfig.getJson(CODE_SQL_ERROR, null);
+            response = JsonConfig.getJson(CODE_SQL_ERROR, null,lang);
         }
         return response;
     }
 
+/*
 
     @RequestMapping(value = "/userApi/upload", method = RequestMethod.POST, produces = "text/plain")
     @ResponseBody
@@ -1940,45 +1961,47 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
 
         InetAddress address = null;
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            String response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            String response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         File path = new File(paths + user.getUserkey());
         if (!path.exists()) {
-            System.out.println("文件夹不存在创建=" + path.mkdirs());
+            println("文件夹不存在创建=" + path.mkdirs());
         }
         try {
             address = InetAddress.getLocalHost();
-            System.out.println("输出地址=" + address.getHostAddress() + "文件路径=" + path.getName());
+            println("输出地址=" + address.getHostAddress() + "文件路径=" + path.getName());
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        // System.out.println("[文件类型] - [{}]"+ file.getContentType());
-        // System.out.println("[文件名称] - [{}]"+ file.getOriginalFilename());
-        // System.out.println("[文件大小] - [{}]"+ file.getSize());
+        // println("[文件类型] - [{}]"+ file.getContentType());
+        // println("[文件名称] - [{}]"+ file.getOriginalFilename());
+        // println("[文件大小] - [{}]"+ file.getSize());
 
         Date dNow = new Date();
         SimpleDateFormat ft = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-        //  System.out.println("当前时间为: " + ft.format(dNow));
+        //  println("当前时间为: " + ft.format(dNow));
         //保存
         JSONObject jsonObject = new JSONObject();
         file.transferTo(new File(path.getPath() + "/" + type + "_" + version + ".firmware"));
         if (type.equals("ble")) {
             Ble_firmware ble_firmware = new Ble_firmware(url, remake, ft.format(dNow), company_name, user.getUserkey(), version,user.getCustomerkey());
             int d = bleMapper.insert(ble_firmware);
-            // System.out.println("保存蓝牙固件数据的结果码="+d);
+            // println("保存蓝牙固件数据的结果码="+d);
         } else if (type.equals("wifi")) {
             Wifi_firmware wifi_firmware = new Wifi_firmware(url, remake, ft.format(dNow), company_name, user.getUserkey(), version,user.getCustomerkey());
 
             int d = wifiMapper.insert(wifi_firmware);
-            //  System.out.println("保存wifi数据的结果码="+d);
+            //  println("保存wifi数据的结果码="+d);
         }
         jsonObject.put("code", constant.code_ok);
         jsonObject.put("msg", "上传成功");
         return jsonObject.toString();
     }
+*/
 
 
     @RequestMapping(value = "/userApi/updateProjectVersion", method = RequestMethod.GET, produces = "text/plain")
@@ -1986,11 +2009,11 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                                        @RequestParam(value = "wifiVersion") String wifiVersion,
                                        @RequestParam(value = "projectKey") String projectKey) {
         Customer user = getCustomer(request);
-
+        String lang=user.getLang();
         String response = "默认参数";
         Gateway_config gatewayConfig = gatewayConfigMap.get(projectKey);
         if (gatewayConfig == null) {
-            response = JsonConfig.getJson(CODE_RESPONSE_NULL, null);
+            response = JsonConfig.getJson(CODE_RESPONSE_NULL, null,lang);
             return response;
         } else {
             gatewayConfig.setBle_version(bleVersion);
@@ -1998,7 +2021,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             GatewayConfig_sql project_sql = new GatewayConfig_sql();
             project_sql.updateGatewayConfig(gatewayConfigMapper, gatewayConfig);
             gatewayConfigMap.put(projectKey, gatewayConfig);
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
             return response;
         }
     }
@@ -2008,20 +2031,21 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                                     @RequestParam(value = "config_name") String config_name, @RequestParam(value = "config_key") String config_key) {
         Customer user = getCustomer(request);
         String response = "默认参数";
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Gateway_config gatewayConfig = gatewayConfigMap.get(config_key);
         if (gatewayConfig == null) {
-            response = JsonConfig.getJson(CODE_RESPONSE_NULL, null);
+            response = JsonConfig.getJson(CODE_RESPONSE_NULL, null,lang);
             return response;
         } else {
             gatewayConfig.setName(config_name);
             GatewayConfig_sql project_sql = new GatewayConfig_sql();
             project_sql.updateGatewayConfig(gatewayConfigMapper, gatewayConfig);
             gatewayConfigMap.put(config_key, gatewayConfig);
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
             Gateway_sql gateway_sql = new Gateway_sql();
             for (String key : gatewayMap.keySet()) {
                 Gateway gateway = (Gateway) redisUtil.get(redis_key_gateway + key);
@@ -2055,11 +2079,12 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "/userApi/selectAllRules", method = RequestMethod.GET, produces = "text/plain")
     public String selectAllRules(HttpServletRequest request) {
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         String response = "默认参数";
         Rules_sql rules_sql = new Rules_sql();
         List<Rules> list = rules_sql.selectAllRules(rulesMapper, user.getUserkey());
 
-        response = JsonConfig.getJson(CODE_OK, list);
+        response = JsonConfig.getJson(CODE_OK, list,lang);
         return response;
     }
 
@@ -2067,13 +2092,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String deleteRules(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "rulesKey") String rulesKey) {
         Customer user = getCustomer(request);
         String response = "默认参数";
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Rules_sql rules_sql = new Rules_sql();
         rules_sql.delete(rulesMapper, rulesKey, user.getUserkey());
-        response = JsonConfig.getJson(CODE_OK, null);
+        response = JsonConfig.getJson(CODE_OK, null,lang);
         for (String key : gatewayConfigMap.keySet()) {
             if (gatewayConfigMap.get(key).getRules_key().equals(rulesKey)) {
                 Gateway_config gatewayConfig = gatewayConfigMap.get(key);
@@ -2089,17 +2115,18 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "/userApi/selectProject_rules", method = RequestMethod.GET, produces = "text/plain")
     public String selectProject_rules(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "rulesKey") String rulesKey) {
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         String response = "默认参数";
         GatewayConfig_sql project_sql = new GatewayConfig_sql();
         List<Gateway_config> list = project_sql.getProjectByRules(gatewayConfigMapper, rulesKey);
-        response = JsonConfig.getJson(CODE_OK, list);
+        response = JsonConfig.getJson(CODE_OK, list,lang);
         return response;
     }
 
     @RequestMapping(value = "/aa/getJsontest", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
     @ResponseBody
     public String getJsontest(@RequestBody JSONObject json) {
-        // System.out.println("收到="+json.toString());
+        // println("收到="+json.toString());
         return "收";
     }
 
@@ -2148,7 +2175,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             int fail = 0;
             Beacon_Sql beacon_sql = new Beacon_Sql();
             for (Map<String, String> map : data) {
-                System.out.println("循环");
+                println("循环");
                 Beacon beacon = new Beacon();
                 beacon.setType(1);
                 beacon.setProjectKey(pkey);
@@ -2158,7 +2185,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 beacon.setN(2.67);
                 boolean status = beacon_sql.addBeacon(beaconMapper, beacon);
                 if (status) {
-                    ok++;
+                    ok++;c
                 } else {
                     fail++;
                 }
@@ -2207,7 +2234,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             int ok = 0;
             int fail = 0;
             for (Map<String, String> map : data) {
-                System.out.println("循环");
+                println("循环");
                 Wordcard_a wordCardA = new Wordcard_a();
                 wordCardA.setType(1);
                 wordCardA.setConfig_key(pkey);
@@ -2234,10 +2261,12 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @ResponseBody
     public String uploadGateway(HttpServletRequest request, @RequestParam("file") MultipartFile file) throws IOException {
         String response;
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         InetAddress address = null;
         Customer user = getCustomer(request);
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         ArrayList<java.util.HashMap<String, String>> data = SystemUtil.readExcel(file, new String[]{ "ble_mac", "name","x", "y"});
@@ -2265,7 +2294,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             int ok = 0;
             int fail = 0;
             for (java.util.Map<String, String> map : data) {
-                System.out.println("循环");
+                println("循环");
                 Gateway gateway = new Gateway(map.get("name"), map.get("ble_mac"), Double.valueOf(map.get("x")), Double.valueOf(map.get("y")));
                 gateway.setUser_key(user.getUserkey());
                 gateway.setCustomerkey(user.getCustomerkey());
@@ -2290,235 +2319,31 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     private Customer getCustomer(HttpServletRequest request) {
        String  token=request.getHeader("batoken");
         Customer customer = (Customer) redisUtil.get(token);
-     //   System.out.println("customer="+customer);
+     //   println("customer="+customer);
         return customer;
     }
-       /* @RequestMapping(value = "/userApi/selectPerson", method = RequestMethod.GET, produces = "text/plain")
-        public String selectPerson( HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "limit") String limit,   @ParamsNotNull @RequestParam(value = "page") String page, @RequestParam(value = "p_id") String p_ids,@RequestParam(value = "name") String name,@RequestParam(value = "idcard") String idcard){
-            Customer customer=getCustomer(request);
-            Person_Sql person_sql=new Person_Sql();
-            int p_id=-1;
-            if(p_ids!=null){
-                p_id=Integer.parseInt(p_ids);
-            }
-            PagePerson personList=person_sql.selectPagePerson(personMapper,Integer.valueOf(page),Integer.valueOf(limit),idcard,name,customer.getUserkey());
 
-           for(Person person:personList.getPersonList()){
-               if(person.getIsbind()==1&&person.getIsopen()==1){
-                   if(wordcard_aMap.get(person.getBind_mac())!=null){
-                       person.setOnLine(wordcard_aMap.get(person.getBind_mac()).getOnline());
-                   }
-               }
-           }
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("code", CODE_OK);
-            jsonObject.put("msg", CODE_OK_txt);
-            jsonObject.put("count", personList.getTotal());
-            jsonObject.put("data", personList.getPersonList());
-           return jsonObject.toString();
-        }*/
-
-    @RequestMapping(value = "/userApi/selectAllPerson", method = RequestMethod.GET, produces = "text/plain")
-    public String selectAllPerson( HttpServletRequest request, @RequestParam(value = "p_id") String p_ids){
-        Customer customer=getCustomer(request);
-        Person_Sql person_sql=new Person_Sql();
-        int p_id=-1;
-        if(p_ids!=null){
-            p_id=Integer.parseInt(p_ids);
-        }
-        List<Person> personList=person_sql.getAllPerson(personMapper,customer.getUserkey(),customer.getProject_key());
-
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", personList.size());
-        jsonObject.put("data", personList);
-        return jsonObject.toString();
-    }
-
-    //获取全部部门，经过排序
-    @RequestMapping(value = "/userApi/selectAllDepartmentss", method = RequestMethod.GET, produces = "text/plain")
-    public String selectAllDepartmentss(HttpServletRequest request){
-        Customer customer=getCustomer(request);
-        Department_Sql departmentSql=new Department_Sql();
-        List<Department> departments= departmentSql.getAllDepartment(departmentMapper,customer.getUserkey());
-
-        java.util.Map<String,DD> ddMap=new HashMap<>();
-        List<Department> departmentList=new ArrayList<>();
-        java.util.Map<String,Department> departmentMap=new HashMap<>();
-        for(int i=0;i<departments.size();i++){
-            Department department=departments.get(i);
-            Department department1=departmentMap.get(department.getP_id());
-            if(department1==null){
-                departmentMap.put(department.getId()+"",department);
-                departmentList.add(department);
-            }else{
-                departmentMap.put(department.getId()+"",department);
-                department1.addDepartment(department);
-            }
-        }
-
-        String response = JsonConfig.getJson(CODE_OK, departmentList);
-        return response;
-    }
-   /* @RequestMapping(value = "/userApi/selectDepartment", method = RequestMethod.GET, produces = "text/plain")
-    public String selectDepartment(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") int limit,   @ParamsNotNull @RequestParam(value = "page") int page){
-        Customer customer=getCustomer(request);
-        Department_Sql departmentSql=new Department_Sql();
-        PageDepartment departments= departmentSql.selectPage(departmentMapper,page,limit,customer.getUserkey());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", departments.getTotal());
-        jsonObject.put("data", departments.getDeviceList());
-        return jsonObject.toString();
-    }*/
-    @RequestMapping(value = "/userApi/deletePerson", method = RequestMethod.GET, produces = "text/plain")
-    public String deletePerson(  @RequestParam(value = "idcard") String idcard){
-        Person_Sql person_sql=new Person_Sql();
-        person_sql.deletePerson(personMapper,idcard);
-        if(personMap.get(idcard)!=null&&personMap.get(idcard).getIsbind()==1){
-            if( wordcard_aMap.get(personMap.get(idcard).getBind_mac())!=null){
-                wordcard_aMap.get(personMap.get(idcard).getBind_mac()).setIdcard("");
-                wordcard_aMap.get(personMap.get(idcard).getBind_mac()).setIsbind(0);
-            }
-            WordCarda_Sql wordCarda_sql=new WordCarda_Sql();
-            Wordcard_a wordCard_a=wordcard_aMap.get(personMap.get(idcard).getBind_mac());
-            wordCarda_sql.update(wordCardaMapper,wordCard_a);
-        }
-        String response = JsonConfig.getJson(CODE_OK, null);
-        return response;
-    }
     @RequestMapping(value = "/userApi/selectWordCard", method = RequestMethod.GET, produces = "text/plain")
     public String selectWordCard(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "mac") String mac){
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         WordCarda_Sql wordCarda_sql=new WordCarda_Sql();
        /* Wordcard_a wordCard_a=new Wordcard_a();
         wordCard_a.setMac(mac);*/
         List<Wordcard_a> wordcard_aList =wordCarda_sql.getWordcard(wordCardaMapper,mac,customer.getUserkey());
-        String response = JsonConfig.getJson(CODE_OK, wordcard_aList);
+        String response = JsonConfig.getJson(CODE_OK, wordcard_aList,lang);
         return response;
     }
     @RequestMapping(value = "/userApi/selectALlWordCard", method = RequestMethod.GET, produces = "text/plain")
     public String selectALlWordCard(HttpServletRequest request){
         WordCarda_Sql wordCarda_sql=new WordCarda_Sql();
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         List<Wordcard_a> wordcard_aList =wordCarda_sql.getAllWordCarda(wordCardaMapper,"","");
-        String response = JsonConfig.getJson(CODE_OK, wordcard_aList);
+        String response = JsonConfig.getJson(CODE_OK, wordcard_aList,lang);
         return response;
     }
-    @RequestMapping(value = "/userApi/unbindPerson", method = RequestMethod.GET, produces = "text/plain")
-    public String unbindPerson(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "idcard") String idcard){
-        Person_Sql person_sql=new Person_Sql();
-        Person person=personMap.get(idcard);
-
-        if(person==null){
-            gatewayStatusTask.writeLog("接口 unbindPerson  解绑的用户不存在");
-            return "解绑的用户不存在";
-        }
-        if(personMap.get(idcard)!=null&&personMap.get(idcard).getIsbind()==1){
-            if( wordcard_aMap.get(personMap.get(idcard).getBind_mac())!=null){
-                wordcard_aMap.get(personMap.get(idcard).getBind_mac()).setIdcard("");
-                wordcard_aMap.get(personMap.get(idcard).getBind_mac()).setIsbind(0);
-            }
-            WordCarda_Sql wordCarda_sql=new WordCarda_Sql();
-            Wordcard_a wordCard_a=wordcard_aMap.get(personMap.get(idcard).getBind_mac());
-            wordCarda_sql.update(wordCardaMapper,wordCard_a);
-            person.setIsopen(0);
-            person.setIsbind(0);
-            person.setBind_mac("");
-            person_sql.update(personMapper,person);
-        }
-        String response = JsonConfig.getJson(CODE_OK, null);
-        return response;
-
-    }
-
-   /* @RequestMapping(value = "/userApi/getDeviceType", method = RequestMethod.GET, produces = "text/plain")
-    public String getDeviceType(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") String limit, @ParamsNotNull @RequestParam(value = "page") String page,  @RequestParam(value = "name") String name){
-       Customer customer=getCustomer(request);
-        DevicePType_Sql devicePType_sql=new DevicePType_Sql();
-        PageDevicePtype pageDevicePtype=devicePType_sql.selectPageDeviceP(devicepTypeMapper,Integer.valueOf(page),Integer.valueOf(limit),name,customer.getUserkey());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", pageDevicePtype.getTotal());
-        jsonObject.put("data", pageDevicePtype.getDeviceList());
-        return jsonObject.toString();
-    }*/
-    /*@RequestMapping(value = "/userApi/addDeviceType", method = RequestMethod.GET, produces = "text/plain")
-    public String addDeviceType(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name){
-        Deviceptype devicePtype=devicePtypeMap.get(name);
-        if(devicePtype!=null){
-            String json=getJson(CODE_REPEAT,null);
-            return json;
-        }
-        Customer user=getCustomer(request);
-        DevicePType_Sql devicePType_sql=new DevicePType_Sql();
-         devicePtype=new Deviceptype(name,user.getUserkey(),user.getCustomerkey());
-        boolean status=devicePType_sql.check(devicepTypeMapper,devicePtype);
-        if(!status){
-            devicePType_sql.addDevicePType(devicepTypeMapper,devicePtype);
-            devicePtypeMap.put(devicePtype.getId(),devicePtype);
-            String json=getJson(CODE_OK,null);
-            return json;
-        }
-        else{
-            String json=getJson(CODE_REPEAT,null);
-            return json;
-        }
-    }*/
-    @RequestMapping(value = "/userApi/deleteDeviceType", method = RequestMethod.GET, produces = "text/plain")
-    public String deleteDeviceType(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "id") int id){
-        Customer user=getCustomer(request);
-      int p=  user.getPermission().getEditbeacon();
-      if(p==0){
-          String json=getJson(CODE_noP,null);
-          return json;
-      }
-        Deviceptype devicePtype=devicePtypeMap.get(id);
-        if(devicePtype==null){
-            String json=getJson(CODE_SQL_ERROR,null);
-            return json;
-        }else{
-
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-            HashMap<String, Devicep> devicePHashMap= deviceP_sql.getDeviceP(devicePMapper,id);
-            if(devicePHashMap!=null&&devicePHashMap.size()>0){
-                JSONObject jsonObject = new JSONObject();
-                jsonObject.put("code", CODE_10);
-                jsonObject.put("msg", CODE_10_txt);
-                return  jsonObject.toString();
-            }
-
-            DevicePType_Sql devicePType_sql=new DevicePType_Sql();
-            boolean status=devicePType_sql.delete(devicepTypeMapper,devicePtype);
-            if(status){
-                devicePtypeMap.remove(devicePtype.getId());
-                String json=getJson(CODE_OK,null);
-                return json;
-            }
-            else{
-                String json=getJson(CODE_SQL_ERROR,null);
-                return json;
-            }
-        }
-
-    }
-    @RequestMapping(value = "/userApi/editDeviceType", method = RequestMethod.GET, produces = "text/plain")
-    public String editDeviceType(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "id") int id, @ParamsNotNull @RequestParam(value = "name") String name){
-        Deviceptype devicePtype=devicePtypeMap .get(id);
-        if(devicePtype==null){
-            String json=getJson(CODE_SQL_ERROR,null);
-            return json;
-        }
-        else{
-            devicePtype.setName(name);
-            devicepTypeMapper.updateById(devicePtype);
-        }
-        String response = JsonConfig.getJson(CODE_OK, null);
-        return response;
-    }
-
+/*
     @RequestMapping(value = "/userApi/getPhoto", method = RequestMethod.GET, produces = "text/plain")
     public void getPhoto(HttpServletResponse response, HttpServletRequest request, @ParamsNotNull @RequestParam(value = "sn") String sn){
 
@@ -2527,7 +2352,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
 
         //String filePath = "E:\\蓝牙网关\\固件版本" ;
         File file = new File(filePath+"\\"+sn+".png");
-        System.out.println("路劲="+file.getPath());
+        println("路劲="+file.getPath());
         if (file.exists()) { //判断文件父目录是否存在q
             response.setContentType("application/vnd.ms-excel;charset=UTF-8");
             response.setCharacterEncoding("UTF-8");
@@ -2555,7 +2380,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            System.out.println("----------file download---" + sn);
+            println("----------file download---" + sn);
             try {
                 bis.close();
                 fis.close();
@@ -2565,460 +2390,23 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             }
         }
         else{
-            System.out.println("文件异常"+file.getPath());
+            println("文件异常"+file.getPath());
         }
 
-    }
+    }*/
     @RequestMapping(value = "/userApi/getDevicerecord", method = RequestMethod.GET, produces = "text/plain")
     public String getDevicerecord(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") String limit, @ParamsNotNull @RequestParam(value = "page") String page,  @RequestParam(value = "name") String name
             , @RequestParam(value = "sn") String sn, @RequestParam(value = "type") String type,@RequestParam(value = "select_bind") String select_bind){
         Customer customer=getCustomer(request);
         DevicePrecord_Sql devicePrecord_sql=new DevicePrecord_Sql();
         PageDeviceP_record pageDeviceP=devicePrecord_sql.selectPageDeviceP(devicePRecordMapper,Integer.valueOf(page),Integer.valueOf(limit),sn,name,Integer.valueOf(type),Integer.valueOf(select_bind),customer.getUserkey());
-        for( Devicep_record deviceP:pageDeviceP.getDeviceList() ){
-            deviceP.setType_name(devicePtypeMap.get(deviceP.getType_id()).getName());
-        }
+
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("code", CODE_OK);
         jsonObject.put("msg", CODE_OK_txt);
         jsonObject.put("count", pageDeviceP.getTotal());
         jsonObject.put("data", pageDeviceP.getDeviceList());
         return jsonObject.toString();
-    }
-    /*@RequestMapping(value = "/userApi/getDevice", method = RequestMethod.GET, produces = "text/plain")
-    public String getDevice(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") String limit, @ParamsNotNull @RequestParam(value = "page") String page,  @RequestParam(value = "name") String name
-    , @RequestParam(value = "sn") String sn, @RequestParam(value = "type") String type,@RequestParam(value = "select_bind") String select_bind){
-       Customer customer=getCustomer(request);
-        DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-        PageDeviceP pageDeviceP=deviceP_sql.selectPageDeviceP(devicePMapper,Integer.valueOf(page),Integer.valueOf(limit),sn,name,Integer.valueOf(type),Integer.valueOf(select_bind),customer.getUserkey());
-        for( Devicep deviceP:pageDeviceP.getDeviceList() ){
-            deviceP.setLasttime(devicePMap.get(deviceP.getSn()).getLasttime());
-            deviceP.setType_name(devicePtypeMap.get(deviceP.getType_id()).getName());
-            if(deviceP.getIsbind()==1&&deviceP.getBind_mac()!=null){
-                System.out.println("报警状态="+beaconsMap.get(deviceP.getBind_mac()).getSos()+"==="+deviceP.getBind_mac());
-                deviceP.setSos(beaconsMap.get(deviceP.getBind_mac()).getSos());
-                deviceP.setRssi(beaconsMap.get(deviceP.getBind_mac()).getRssi());
-                deviceP.setOnline(beaconsMap.get(deviceP.getBind_mac()).getOnline());
-                deviceP.setLasttime(beaconsMap.get(deviceP.getBind_mac()).getLastTime());
-                deviceP.setGateway_mac(devicePMap.get(deviceP.getSn()).getGateway_mac());
-                deviceP.setPoint_name(devicePMap.get(deviceP.getSn()).getPoint_name());
-            }
-
-        }
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", pageDeviceP.getTotal());
-        jsonObject.put("data", pageDeviceP.getDeviceList());
-        return jsonObject.toString();
-    }
-*/
-    @RequestMapping(value = "/userApi/getAllDeviceType", method = RequestMethod.GET, produces = "text/plain")
-    public String getAllDeviceType(HttpServletRequest request){
-        Customer customer=getCustomer(request);
-        DevicePType_Sql devicePType_sql=new DevicePType_Sql();
-        List<Deviceptype> deviceptypes = devicePType_sql.getAllDevicePlist(devicepTypeMapper,customer.getUserkey());
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", deviceptypes.size());
-        jsonObject.put("data", deviceptypes);
-        return jsonObject.toString();
-    }
-
-
-/*
-
-    //添加资产
-    @RequestMapping(value = "userApi/addDevice", method = RequestMethod.POST, produces = "text/plain")
-    public String addDevice(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "name") String name,@ParamsNotNull @RequestParam(value = "sn") String sn,@ParamsNotNull @RequestParam(value = "type_id") int type_id,@ParamsNotNull @RequestParam(value = "beaconMac") String beaconMac, @RequestParam("file") MultipartFile file){
-        String response = null;
-        sn=sn.replaceAll(" ","");
-        int isbind=0;
-        if(beaconMac.equals("不绑定信标")){
-            isbind=0;
-            beaconMac="";
-        }
-        else{
-            isbind=1;
-        }
-        Customer user1 = getCustomer(request);
-        System.out.println("输出权限"+user1.getPermission());
-        if(user1.getPermission()==null||user1.getPermission().getEditbeacon()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(user1.getPermission().getEditbeacon()==1 ){
-            System.out.println("对象为" + user1.getUsername());
-            String pathss=null;
-            if(file!=null){
-                File path = new File(paths);
-
-                if (!path.exists()) {
-                    System.out.println("文件夹不存在创建=" + path.mkdirs());
-                }
-                try {
-                    file.transferTo(new File(path.getPath() + "/" + sn + ".png"));
-                    pathss =path.getPath() + "/" + sn + ".png";
-                }catch (Exception e){
-                    System.out.println("保存文件异常");
-                }
-            }
-            Devicep deviceP=new Devicep(type_id,name, "/userApi/getPhoto?sn="+sn,beaconMac,isbind,1,user1.getUserkey(),sn,0,user1.getCustomerkey());
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-
-            boolean status=  deviceP_sql.addDeviceP(devicePMapper,deviceP);
-
-            if(status){
-                response = JsonConfig.getJson(CODE_OK, null);
-                devicePMap.put(deviceP.getSn(),deviceP);
-                if(beaconMac.length()>0){
-                    Beacon beacon=beaconsMap.get(beaconMac);
-                    beacon.setIsbind(1);
-                    beacon.setDevice_sn(sn);
-                    Beacon_Sql d=new Beacon_Sql();
-                    d.update(beaconMapper,beacon);
-                    response = JsonConfig.getJson(CODE_OK, null);
-                }
-            }else{
-                response = JsonConfig.getJson(CODE_REPEAT, null);
-            }
-        }
-        return response;
-    }
-*/
-
-
-    //添加资产
-    @RequestMapping(value = "userApi/addDevice", method = RequestMethod.POST, produces = "text/plain")
-    public String addDevice(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "name") String name,@RequestParam(value = "btime") String btime,@ParamsNotNull @RequestParam(value = "sn") String sn,@ParamsNotNull @RequestParam(value = "type_id") int type_id,@ParamsNotNull @RequestParam(value = "beaconMac") String beaconMac,@ParamsNotNull @RequestParam(value = "person_name") String person_name,@ParamsNotNull @RequestParam(value = "idcard") String idcard){
-        String response = null;
-        sn=sn.replaceAll(" ","");
-        int isbind=0;
-        if(beaconMac.equals("不绑定信标")){
-            isbind=0;
-            beaconMac="";
-        }
-        else{
-            isbind=1;
-        }
-        Customer user1 = getCustomer(request);
-        System.out.println("输出权限"+user1.getPermission());
-        if(user1.getPermission()==null||user1.getPermission().getEditbeacon()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(user1.getPermission().getEditbeacon()==1 ){
-            System.out.println("对象为" + user1.getUsername());
-            String pathss=null;
-
-            Devicep deviceP=new Devicep(type_id,name, "",beaconMac,isbind,1,user1.getUserkey(),sn,0,user1.getCustomerkey(),idcard,person_name);
-            if(btime!=null&&!btime.contains("undefined")){
-                deviceP.setBtime(btime);
-            }
-
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-
-            boolean status=  deviceP_sql.addDeviceP(devicePMapper,deviceP);
-
-            if(status){
-                response = JsonConfig.getJson(CODE_OK, null);
-                devicePMap.put(deviceP.getSn(),deviceP);
-                DevicePrecord_Sql devicePrecord_sql=new DevicePrecord_Sql();
-                Devicep_record devicep_record=new Devicep_record();
-                devicep_record.setSn(sn);
-                devicep_record.setName(name);
-                devicep_record.setType_id(type_id);
-                devicep_record.setCreatetime(deviceP.getCreatetime());
-                devicep_record.setUserkey(user1.getUserkey());
-                devicep_record.setCustomer_key(user1.getCustomerkey());
-                devicep_record.setIdcard(idcard);
-                devicep_record.setPerson_name(person_name);
-                devicePrecord_sql.addDeviceP(devicePRecordMapper,devicep_record);
-                if(beaconMac.length()>0){
-                    Beacon beacon=beaconsMap.get(beaconMac);
-                    beacon.setIsbind(1);
-                    beacon.setDevice_sn(sn);
-                    Beacon_Sql d=new Beacon_Sql();
-                    d.update(beaconMapper,beacon);
-                    response = JsonConfig.getJson(CODE_OK, null);
-                }
-            }else{
-                response = JsonConfig.getJson(CODE_REPEAT, null);
-            }
-        }
-        return response;
-    }
-
-    @RequestMapping(value = "/userApi/unbindDevice", method = RequestMethod.GET, produces = "text/plain")
-    public String unbindDevice(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "sn") String sn){
-        Customer user=getCustomer(request);
-        if(user.getPermission().getEditbeacon()==0){
-            String json=getJson(CODE_noP,null);
-            return json;
-        }
-        else{
-            Devicep deviceP=devicePMap.get(sn);
-            if(deviceP!=null&&deviceP.getBind_mac()!=null){
-                Beacon beacon=beaconsMap.get(deviceP.getBind_mac());
-                beacon.setDevice_sn("");
-                beacon.setIsbind(0);
-                beacon.setDevice_name("");
-                Beacon_Sql beacon_sql=new Beacon_Sql();
-                beacon_sql.update(beaconMapper,beacon);
-                deviceP.setIsbind(0);
-                deviceP.setIsopen(0);
-                deviceP.setBind_mac("");
-                DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-                deviceP_sql.update(devicePMapper,deviceP);
-                String json=getJson(CODE_OK,null);
-                return json;
-            } else{
-                String json=getJson(CODE_SQL_ERROR,null);
-                return json;
-            }
-
-        }
-
-    }/*
-    @RequestMapping(value = "/userApi/editDevice", method = RequestMethod.POST, produces = "text/plain")
-    public String editDevice(HttpServletRequest request,
-                             @ParamsNotNull @RequestParam(value = "sn") String sn,
-                             @ParamsNotNull @RequestParam(value = "host") String host,
-                             @ParamsNotNull @RequestParam(value = "name") String name,
-                             @ParamsNotNull @RequestParam(value = "type") int type,
-                             @RequestParam("file") MultipartFile file,
-                             @ParamsNotNull @RequestParam(value = "bindmac") String bindmac) {
-        Customer user=getCustomer(request);
-        Beacon beacon;
-        String pathss=null;
-        if(file!=null){
-            File path = new File(paths);
-
-            if (!path.exists()) {
-                System.out.println("文件夹不存在创建=" + path.mkdirs());
-            }
-            try {
-                file.transferTo(new File(path.getPath() + "/" + sn + ".png"));
-                pathss =path.getPath() + "/" + sn + ".png";
-            }catch (Exception e){
-                System.out.println("保存文件异常");
-            }
-        }
-        if(user.getPermission().getEditbeacon()==0){
-            String json=getJson(CODE_noP,null);
-            return json;
-        }else{
-            Beacon_Sql beacon_sql=new Beacon_Sql();
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-            Devicep deviceP=devicePMap.get(sn);
-            deviceP.setType_id(type);
-            deviceP.setName(name);
-            deviceP.setType_name(devicePtypeMap.get(type).getName());
-            deviceP.setPhoto("/userApi/getPhoto?sn="+deviceP.getSn());
-            //已绑定，但是更换绑定信标或者解绑
-            System.out.println("deviceP.getBind_mac()"+deviceP.getBind_mac());
-
-            if (deviceP.getIsbind()==1&&!deviceP.getBind_mac().equals(bindmac)){
-                //解绑原有信标
-                 beacon=beaconsMap.get(deviceP.getBind_mac());
-                beacon.setIsbind(0);
-                beacon.setDevice_name("");
-                beacon.setDevice_sn("");
-                //更新信标
-                beacon_sql.update(beaconMapper,beacon);
-                //更改资产绑定
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    beacon.setDevice_sn(deviceP.getSn());
-                    beacon.setDevice_name(deviceP.getName());
-                    beacon.setIsbind(1);
-                    beacon_sql.update(beaconMapper,beacon);
-                }
-
-
-            }else if(deviceP.getIsbind()==0){
-                //没有变更
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    beacon.setDevice_sn(deviceP.getSn());
-                    beacon.setDevice_name(deviceP.getName());
-                    beacon.setIsbind(1);
-                    beacon_sql.update(beaconMapper,beacon);
-                }
-
-            }
-            deviceP_sql.update(devicePMapper,deviceP);
-        }
-        return getJson(CODE_OK,null);
-    }*/
-/*
-
-    @RequestMapping(value = "/userApi/editDevice", method = RequestMethod.POST, produces = "text/plain")
-    public String editDevice(HttpServletRequest request,
-                             @ParamsNotNull @RequestParam(value = "sn") String sn,
-
-                             @ParamsNotNull @RequestParam(value = "name") String name,
-                             @ParamsNotNull @RequestParam(value = "type") int type,
-
-                             @ParamsNotNull @RequestParam(value = "bindmac") String bindmac,   @ParamsNotNull @RequestParam(value = "person_name") String person_name,   @ParamsNotNull @RequestParam(value = "idcard") String idcard) {
-        Customer user=getCustomer(request);
-        Beacon beacon;
-
-
-        if(user.getPermission().getEditbeacon()==0){
-            String json=getJson(CODE_noP,null);
-            return json;
-        }else{
-            Beacon_Sql beacon_sql=new Beacon_Sql();
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-            Devicep deviceP=devicePMap.get(sn);
-            deviceP.setType_id(type);
-            deviceP.setName(name);
-            deviceP.setJobnumber(jobnumber);
-            deviceP.setPerson_name(person_name);
-            deviceP.setType_name(devicePtypeMap.get(type).getName());
-            deviceP.setPhoto("/userApi/getPhoto?sn="+deviceP.getSn());
-            //已绑定，但是更换绑定信标或者解绑
-            System.out.println("deviceP.getBind_mac()"+deviceP.getBind_mac());
-
-            if (deviceP.getIsbind()==1&&!deviceP.getBind_mac().equals(bindmac)){
-                //解绑原有信标
-                beacon=beaconsMap.get(deviceP.getBind_mac());
-                beacon.setIsbind(0);
-                beacon.setDevice_name("");
-                beacon.setDevice_sn("");
-                //更新信标
-                beacon_sql.update(beaconMapper,beacon);
-                //更改资产绑定
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    beacon.setDevice_sn(deviceP.getSn());
-                    beacon.setDevice_name(deviceP.getName());
-                    beacon.setIsbind(1);
-                    beacon_sql.update(beaconMapper,beacon);
-                }
-
-
-            }else if(deviceP.getIsbind()==0){
-                //没有变更
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    beacon.setDevice_sn(deviceP.getSn());
-                    beacon.setDevice_name(deviceP.getName());
-                    beacon.setIsbind(1);
-                    beacon_sql.update(beaconMapper,beacon);
-                }
-
-            }
-            deviceP_sql.update(devicePMapper,deviceP);
-        }
-        return getJson(CODE_OK,null);
-    }
-*/
-
-    @RequestMapping(value = "/userApi/editDevicenoFile", method = RequestMethod.POST, produces = "text/plain")
-    public String editDevicenoFile(HttpServletRequest request,
-                             @ParamsNotNull @RequestParam(value = "sn") String sn,
-                             @ParamsNotNull @RequestParam(value = "name") String name,
-                             @ParamsNotNull @RequestParam(value = "type") int type,
-
-                             @ParamsNotNull @RequestParam(value = "bindmac") String bindmac) {
-        Customer user=getCustomer(request);
-        Beacon beacon;
-        System.out.println("类型="+devicePtypeMap.get(type).getName());
-        System.out.println(name);
-        if(user.getPermission().getEditbeacon()==0){
-            String json=getJson(CODE_noP,null);
-            return json;
-        }else{
-            Beacon_Sql beacon_sql=new Beacon_Sql();
-            DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-            Devicep deviceP=devicePMap.get(sn);
-            deviceP.setType_id(type);
-            deviceP.setName(name);
-            deviceP.setType_name(devicePtypeMap.get(type).getName());
-            System.out.println("1111111111");
-            //已绑定，但是更换绑定信标或者解绑
-            if (deviceP.getIsbind()==1&&!deviceP.getBind_mac().equals(bindmac)){
-                //解绑原有信标
-                beacon=beaconsMap.get(deviceP.getBind_mac());
-                beacon.setIsbind(0);
-                beacon.setDevice_name("");
-                beacon.setDevice_sn("");
-                //更新信标
-                beacon_sql.update(beaconMapper,beacon);
-                //更改资产绑定
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    System.out.println("2222beacon="+beacon);
-                    if(beacon!=null){
-                        beacon.setDevice_sn(deviceP.getSn());
-                        beacon.setDevice_name(deviceP.getName());
-                        beacon.setIsbind(1);
-                        beacon_sql.update(beaconMapper,beacon);
-                    }
-
-                }
-                deviceP_sql.update(devicePMapper,deviceP);
-
-            }else if(deviceP.getIsbind()==0){
-                //没有变更
-                if(bindmac.equals("不绑定信标")){
-                    deviceP.setBind_mac("");
-                    deviceP.setIsopen(0);
-                    deviceP.setIsbind(0);
-                }else {//绑定新标签
-                    deviceP.setBind_mac(bindmac);
-                    deviceP.setIsopen(1);
-                    deviceP.setIsbind(1);
-                    beacon=beaconsMap.get(bindmac);
-                    System.out.println("111beacon="+beacon);
-                    if(beacon!=null){
-                        beacon.setDevice_sn(deviceP.getSn());
-                        beacon.setDevice_name(deviceP.getName());
-                        beacon.setIsbind(1);
-                        beacon_sql.update(beaconMapper,beacon);
-                    }
-                }
-                deviceP_sql.update(devicePMapper,deviceP);
-            }
-            deviceP_sql.update(devicePMapper,deviceP);
-        }
-        return getJson(CODE_OK,null);
     }
 
 
@@ -3040,202 +2428,35 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     @RequestMapping(value = "/userApi/deleteCheckRecord", method = RequestMethod.GET, produces = "text/plain")
     public String deleteCheckRecord(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "id") int id){
         CheckRecord_Sql checkRecordSql=new CheckRecord_Sql();
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         checkRecordSql.delete(checkRecordMapper,id);
-        return getJson(CODE_OK,null);
+        return getJson(CODE_OK,null,lang);
     }
 
 
 
-    @RequestMapping(value = "/userApi/checkRecord", method = RequestMethod.GET)
-    @ResponseBody
-    public void checkRecord(HttpServletResponse response) throws UnsupportedEncodingException {
-
-        long thisTime = System.currentTimeMillis();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
-        Date date=new Date(thisTime);
-            int count = devicePMap.size();
-            int online = 0;
-            int offline = 0;
-            int unbind = 0;
-            int onbind = 0;
-            int sos_count = 0;
-            Devicep deviceP;
-            for (String sn : devicePMap.keySet()) {
-                deviceP = devicePMap.get(sn);
-                if (deviceP.getIsbind() == 1) {
-                    onbind++;
-                    //只有绑定信标的设备才会有在线离线的说法。
-                    if (deviceP.getOnline() == 1) {
-                        online++;
-                    } else {
-                        offline++;
-                    }
-                    if (deviceP.getSos() == 1) {
-                        sos_count++;
-                    }
-                } else {
-                    unbind++;
-                }
-            }
-            String[] titles = {"设备名称", "序列号", "绑定状态", "信标mac", "谁添加", "资产类型", "报警状态", "在线情况", "在线时间", "区域位置", "信号值", "网关mac", "电量", "入库时间"};
-            //在这里进行添加excel
-            SystemUtil.getUtil().createExcelTwo(paths + "/" + thisTime + ".xls", titles, devicePMap);
-            //每个excel保存在数据库
-         /*   Check_record check_record = new Check_record(df.format(date), online, offline, count, 0, sos_count, unbind, onbind,thisTime+"");
-            CheckRecord_Sql checkRecordSql = new CheckRecord_Sql();
-            checkRecordSql.addRecord(checkRecordMapper, check_record);*/
-
-
-
-        String filePath = NewSystemApplication.paths;
-        //String filePath = "E:\\蓝牙网关\\固件版本" ;
-        File file = new File(filePath + "/" + thisTime+".xls");
-        if (file.exists()) { //判断文件父目录是否存在q
-            response.setContentType("application/vnd.ms-excel;charset=UTF-8");
-            response.setCharacterEncoding("UTF-8");
-            // response.setContentType("application/force-download");
-            response.setHeader("Content-Disposition", "attachment;fileName=" + java.net.URLEncoder.encode(df.format(date)+".xls", "UTF-8"));
-            byte[] buffer = new byte[1024];
-            FileInputStream fis = null; //文件输入流
-            BufferedInputStream bis = null;
-            OutputStream os = null; //输出流
-            try {
-                os = response.getOutputStream();
-                fis = new FileInputStream(file);
-                bis = new BufferedInputStream(fis);
-                int i = bis.read(buffer);
-                while (i != -1) {
-                    os.write(buffer, 0, i);
-                    i = bis.read(buffer);
-                }
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            System.out.println("----------file download---" + file.getPath());
-            try {
-                bis.close();
-                fis.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @RequestMapping(value = "/userApi/deleteDevice", method = RequestMethod.GET, produces = "text/plain")
-    public String deleteDevice(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "sn") String sn){
-        DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-        Devicep deviceP=devicePMap.get(sn);
-        if(deviceP!=null){
-            deviceP_sql.delete(devicePMapper,sn);
-            return getJson(CODE_OK,null);
-        }
-        else{
-            return getJson(CODE_SQL_ERROR,null);
-        }
-    }
-    //删除入库记录
-    @RequestMapping(value = "/userApi/deleteDeviceRecord", method = RequestMethod.GET, produces = "text/plain")
-    public String deleteDeviceRecord(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "sn") String sn){
-        DevicePrecord_Sql deviceP_sql=new DevicePrecord_Sql();
-        Devicep deviceP=devicePMap.get(sn);
-        if(deviceP!=null){
-            deviceP_sql.delete(devicePRecordMapper,sn);
-            return getJson(CODE_OK,null);
-        }
-        else{
-            return getJson(CODE_SQL_ERROR,null);
-        }
-    }
-//出库操作
-    @RequestMapping(value = "/userApi/addOutBound", method = RequestMethod.POST, produces = "text/plain")
-    public String addOutBound(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "sns") String sns,@ParamsNotNull @RequestParam(value = "idcard") String idcard,@ParamsNotNull @RequestParam(value = "person_name") String person_name,@ParamsNotNull @RequestParam(value = "remake") String remake,@ParamsNotNull @RequestParam(value = "remove_type") int remove_type){
-        Customer user=getCustomer(request);
-        String[] sn_s=sns.split(",");
-        Beacon_Sql beacon_sql=new Beacon_Sql();
-        DeviceP_Sql deviceP_sql=new DeviceP_Sql();
-        OutBound_Sql outBound_sql=new OutBound_Sql();
-        for(String sn:sn_s){
-            if(sn==null||sn.length()==0){
-                continue;
-            }
-            Devicep deviceP=devicePMap.get(sn);
-            if(deviceP==null){
-                return JsonConfig.getJson(CODE_SQL_ERROR,null);
-
-            }
-            //如果出库的资产绑定了信标，那就把信标解绑了
-            if(deviceP.getIsbind()==1){
-                Beacon beacon= beaconsMap.get(deviceP.getBind_mac());
-                beacon.unbind();
-                beacon_sql.update(beaconMapper,beacon);
-                deviceP.unbind();
-            }
-            deviceP.setOutbound(1);
-            deviceP_sql.update(devicePMapper,deviceP);
-            Outbound outBound=new Outbound(sn,remake,remove_type,idcard,person_name,user.getUserkey(),deviceP.getName(),user.getCustomerkey());
-            outBound_sql.addOutBound(outBoundMapper,outBound);
-        }
-        return getJson(CODE_OK,null);
-
-    }
 
 ///其实是获取一个管理账号下的customer
     @RequestMapping(value = "/userApi/getAllUser", method = RequestMethod.GET, produces = "text/plain")
     public String getAllUser(HttpServletRequest request){
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
        ArrayList<Customer> userArrayList=new ArrayList<>();
        for(String key:customerMap.keySet()){
            if(customerMap.get(key).getUserkey().equals(customer.getUserkey())){
                userArrayList.add(customerMap.get(key));
            }
        }
-        return getJson(CODE_OK,userArrayList);
-    }
-
-    @RequestMapping(value = "/userApi/getOutBound", method = RequestMethod.GET, produces = "text/plain")
-    public String getOutBound(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") int limit, @ParamsNotNull @RequestParam(value = "page") int page, @RequestParam(value = "sn") String sn, @RequestParam(value = "name") String name, @RequestParam(value = "type") int type){
-        OutBound_Sql outBound_sql=new OutBound_Sql();
-        Customer customer=getCustomer(request);
-        PageOutBound pageOutBound=outBound_sql.selectPageOutBound(outBoundMapper,page,limit,sn,name,type,customer.getUserkey());
-        for(Outbound outBound:pageOutBound.getOutboundList()){
-            if(outBound.getCustomer_key()!=null&&outBound.getCustomer_key().length()>0){
-                outBound.setUserkey_name(customerMap.get(outBound.getCustomer_key()).getNickname());
-            }
-
-             type=outBound.getRemove_type();
-            String typename="";
-            switch (type){
-                case 1:
-                    typename="借用";
-                    break;
-                case 2:
-                    typename="报废";
-                    break;
-                case 3:
-                    typename="丢失";
-                    break;
-                case 4:
-                    typename="出库";
-                    break;
-            }
-            outBound.setType_name(typename);
-        }
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("code", CODE_OK);
-        jsonObject.put("msg", CODE_OK_txt);
-        jsonObject.put("count", pageOutBound.getTotal());
-        jsonObject.put("data", pageOutBound.getOutboundList());
-        return jsonObject.toString();
+        return getJson(CODE_OK,userArrayList,lang);
     }
 
     @RequestMapping(value = "/userApi/addArea", method = RequestMethod.POST, produces = "text/plain")
     public String addArea(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "macs") String macs,@ParamsNotNull @RequestParam(value = "name") String name){
         Customer user=getCustomer(request);
+        String lang=user.getLang();
         Area area=new Area(name,macs,user.getUserkey(),user.getCustomerkey());
-        Area_Sql area_sql=new Area_Sql();
-        area_sql.addArea(areaMapper,area);
+
         String[] macs_s=macs.split(",");
         Gateway_sql gateway_sql=new Gateway_sql();
         for(String mac:macs_s){
@@ -3244,75 +2465,20 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         gateway_sql.updateGateway(gatewayMapper,gateway);
         redisUtil.set(redis_key_gateway+mac,gateway);
         }
-        return getJson(CODE_OK,null);
+        return getJson(CODE_OK,null,lang);
 
     }
 
 
 
-    @RequestMapping(value = "/userApi/editArea", method = RequestMethod.POST, produces = "text/plain")
-    public String editArea(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "macs") String macs,@ParamsNotNull @RequestParam(value = "name") String name,@ParamsNotNull @RequestParam(value = "id") String id){
-        Customer user=getCustomer(request);
-        //把旧的区域以及对应的网关全部取消关联一次
-        Area area=area_Map.get(Integer.valueOf(id));
-        String oldMac=area.getGateway_mac();
-        String[] macs_old=oldMac.split(",");
 
-        Gateway_sql gateway_sql=new Gateway_sql();
-        for(String mac:macs_old){
-            Gateway gateway=GatewayMap.get(mac);
-            gateway.setArea_id(0);
-            gateway_sql.updateGateway(gatewayMapper,gateway);
-            redisUtil.set(redis_key_gateway+mac,gateway);
-        }
-
-
-        Area_Sql area_sql=new Area_Sql();
-        area.setGateway_mac(macs);
-        area.setName(name);
-        area_sql.update(areaMapper,area);
-        String[] macs_s=macs.split(",");
-        for(String mac:macs_s){
-            Gateway gateway=GatewayMap.get(mac);
-            gateway.setArea_id(area.getId());
-            gateway_sql.updateGateway(gatewayMapper,gateway);
-            redisUtil.set(redis_key_gateway+mac,gateway);
-        }
-        return getJson(CODE_OK,null);
-
-    }
-
-
-
-    @RequestMapping(value = "/userApi/deleteArea", method = RequestMethod.POST, produces = "text/plain")
-    public String deleteArea(HttpServletRequest request,  @ParamsNotNull @RequestParam(value = "id") String id){
-        Customer user=getCustomer(request);
-        Area area=area_Map.get(Integer.valueOf(id));
-        Area_Sql area_sql=new Area_Sql();
-        //删除这个区域
-        area_sql.delete(areaMapper,Integer.valueOf(id));
-        String macs=area.getGateway_mac();
-        String[] macs_s=macs.split(",");
-        Gateway_sql gateway_sql=new Gateway_sql();
-        for(String mac:macs_s){
-            //变更每个网关对应的区域信息
-            Gateway gateway=GatewayMap.get(mac);
-            gateway.setArea_id(0);
-            gateway_sql.updateGateway(gatewayMapper,gateway);
-            redisUtil.set(redis_key_gateway+mac,gateway);
-        }
-        return getJson(CODE_OK,null);
-
-    }
     @RequestMapping(value = "/userApi/getDeviceOffline", method = RequestMethod.GET, produces = "text/plain")
     public String getDeviceOffline(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "limit") String limit, @ParamsNotNull @RequestParam(value = "page") String page,@RequestParam(value = "name") String name,@RequestParam(value = "sn") String sn){
        Customer customer=getCustomer(request);
         DeviceOffline_Sql deviceOffline_sql=new DeviceOffline_Sql();
         //   PageCheckRecord pageCheckRecord=checkRecordSql.selectPageRecord(checkRecordMapper,Integer.valueOf(page),Integer.valueOf(limit),sn,name,Integer.valueOf(type),Integer.valueOf(select_bind));
         PageDeviceOffline pageCheckRecord=deviceOffline_sql.selectPage(deviceOfflineMapper,Integer.valueOf(page),Integer.valueOf(limit),name,sn,customer.getUserkey());
-        for(Device_offline device_offline:pageCheckRecord.getDevice_offlines()){
-            device_offline.setType_name(  devicePtypeMap.get(device_offline.getType_id()).getName());
-        }
+
 
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("code", CODE_OK);
@@ -3325,41 +2491,44 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     public String getCheckSheet(HttpServletRequest request){
         //check_sheet
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         Check_sheet check_sheet=check_sheetMap.get(customer.getUserkey());
-                String response=getJson(CODE_OK,check_sheet);
+                String response=getJson(CODE_OK,check_sheet,lang);
         return response;
     }
     @RequestMapping(value = "/userApi/setCheckSheet", method = RequestMethod.GET, produces = "text/plain")
     public String setCheckSheet(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "linetime") String linetime, @ParamsNotNull @RequestParam(value = "starttime") String starttime, @ParamsNotNull @RequestParam(value = "stoptime") String stoptime){
         //check_sheet
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         Check_sheet check_sheet=check_sheetMap.get(customer.getUserkey());
-        check_sheet.setStarttime(Integer.valueOf(starttime));
-        check_sheet.setStopttime(Integer.valueOf(stoptime));
-        check_sheet.setLinetime(Integer.valueOf(linetime));
+
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper,check_sheet);
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
     }
-    @RequestMapping(value = "/userApi/setMqtt", method = RequestMethod.POST, produces = "text/plain")
-    public String setMqtt(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "host") String host, @ParamsNotNull @RequestParam(value = "port") String port, @ParamsNotNull @RequestParam(value = "sub") String sub){
+    /*@RequestMapping(value = "/userApi/setMqtt", method = RequestMethod.POST, produces = "text/plain")
+    public String setMqtt(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "host") String host, @ParamsNotNull @RequestParam(value = "port") int port, @ParamsNotNull @RequestParam(value = "sub") String sub){
         Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         check_sheetMap.get(customer.getUserkey()).setPort(port);
         check_sheetMap.get(customer.getUserkey()).setHost(host);
         check_sheetMap.get(customer.getUserkey()).setSub(sub);
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper, check_sheetMap.get(customer.getUserkey()));
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         MyMqttClient myMqttClient=MyMqttClient.regetMyMqttClient(host,port);
         myMqttClient.start();
         return response;
-    }
+    }*/
     @RequestMapping(value = "/userApi/setConfigTopic", method = RequestMethod.POST, produces = "text/plain")
     public String setConfigTopic(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "subtopic") String subtopic, @ParamsNotNull @RequestParam(value = "pubtopic") String pubtopic, @ParamsNotNull @RequestParam(value = "configkey") String configkey){
         Gateway_config gatewayConfig= gatewayConfigMap.get(configkey);
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(gatewayConfig==null){
-            String response=getJson(CODE_SQL_ERROR,null);
+            String response=getJson(CODE_SQL_ERROR,null,lang);
             return response;
         }
         subtopic=subtopic.toLowerCase();
@@ -3368,49 +2537,53 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         gatewayConfig.setPub_topic(pubtopic);
         GatewayConfig_sql gatewayConfigSql=new GatewayConfig_sql();
         gatewayConfigSql.updateGatewayConfig(gatewayConfigMapper,gatewayConfig);
-        String response=getJson(CODE_OK,null);
-        MyMqttClient myMqttClient=MyMqttClient.getMyMqttClient();
+        String response=getJson(CODE_OK,null,lang);
+        MyMqttClient myMqttClient=myMqttClientMap.get(customer.getProject_key());
         myMqttClient.addSubTopic(pubtopic);
 
         return response;
     }
-    //全部新进入网关的默认订阅主题
+/*    //全部新进入网关的默认订阅主题
     @RequestMapping(value = "/userApi/setDefaultSub", method = RequestMethod.POST, produces = "text/plain")
     public String setDefaultSub(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "subtopic") String subtopic){
         Customer customer=getCustomer(request);
         subtopic=subtopic.toLowerCase();
-
+        String lang=customer.getLang();
         check_sheetMap.get(customer.getUserkey()).setDefaultsub(subtopic);
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper, check_sheetMap.get(customer.getUserkey()));
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
-    }
+    }*/
     //更新当前网关的主题
     @RequestMapping(value = "/userApi/setGatewaySub", method = RequestMethod.POST, produces = "text/plain")
     public String setGatewaySub(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "subtopic") String subtopic,@ParamsNotNull @RequestParam(value = "address") String address){
         Gateway  gateway = (Gateway) redisUtil.get(redis_key_gateway + address);
         gateway.setSub_topic(subtopic);
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         redisUtil.set(redis_key_gateway + address,gateway);
         Gateway_sql gatewaySql=new Gateway_sql();
         gatewaySql.updateGateway(gatewayMapper,gateway);
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
     }
     //更新当前网关的主题
     @RequestMapping(value = "/userApi/setReboot", method = RequestMethod.POST, produces = "text/plain")
     public String setReboot(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "address") String address){
         String[] macs=address.split(",");
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         String sys_gw_reboot="{\"pkt_type\":\"command\", \"gw_addr\": \"%s\", \"data\": {\"msgId\": 1234, \"cmd\": \"sys_gw_reboot\"}}";
         if(macs!=null&&macs.length>0){
             for(int i=0;i<macs.length;i++){
-                System.out.println("mac="+macs[i]);
+                println("mac="+macs[i]);
                 Gateway gateway= (Gateway) redisUtil.get(redis_key_gateway + macs[i]);
                 if(gateway!=null&&gateway.getSub_topic()!=null){
-                    RabbitMessage rabbitMessage = new RabbitMessage(gateway.getSub_topic(), String.format(sys_gw_reboot, macs[i]));
+                    RabbitMessage rabbitMessage = new RabbitMessage(gateway.getSub_topic(), String.format(sys_gw_reboot, macs[i]),gateway.getProject_key());
                     // directExchangeProducer.send(rabbitMessage.toString(), go_to_connect);
                     directExchangeProducer.send(rabbitMessage.toString(), "sendToGateway");
-                    System.out.println("下发了指令");
+                    println("下发了指令");
                     gateway.setOnline(0);
                     gateway.setReboot(5);
                     gateway.setOnline_txt("离线");
@@ -3420,108 +2593,70 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                 }
             }
         }
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
     }
     //更新当前网关的主题
     @RequestMapping(value = "/userApi/setGatewaysyn", method = RequestMethod.POST, produces = "text/plain")
     public String setGatewaysyn(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "isyn") int isyn,@ParamsNotNull @RequestParam(value = "address") String address){
-        //System.out.println("address"+address);
+        //println("address"+address);
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         Gateway  gateway = (Gateway) redisUtil.get(redis_key_gateway + address);
         if(gateway==null){
-            String response=getJson(CODE_SQL_ERROR,null);
+            String response=getJson(CODE_SQL_ERROR,null,lang);
             return response;
         }
         gateway.setIsyn(isyn);
         redisUtil.set(redis_key_gateway + address,gateway);
         Gateway_sql gatewaySql=new Gateway_sql();
         gatewaySql.updateGateway(gatewayMapper,gateway);
-        String response=getJson(CODE_OK,null);
-        return response;
-    }
-    //设置UDP推送接口
-    @RequestMapping(value = "/userApi/setUdp", method = RequestMethod.POST, produces = "text/plain")
-    public String setUdp(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "udp") String udp){
-       String[] udps=udp.split(":");
-        System.out.println("udps="+udps.length);
-       if(udps.length!=2){
-           return JsonConfig.getJson(CODE_DR,null);
-       }
-        System.out.println("udps="+udps[0]);
-
-        System.out.println("udps="+udps[0].split("\\.").length);
-       if(udps[0].split("\\.").length!=4){
-           return JsonConfig.getJson(CODE_DR,null);
-       }
-        Customer customer=getCustomer(request);
-        Check_sheet check_sheet=check_sheetMap.get(customer.getUserkey());
-        if(check_sheet==null){
-            return JsonConfig.getJson(CODE_SQL_ERROR,null);
-        }
-        check_sheet.setUdp(udp);
-        CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
-        checkSheet_sql.update(checkSheetMapper,check_sheet);
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
     }
 
-    @RequestMapping(value = "/userApi/deleteOutBound", method = RequestMethod.POST, produces = "text/plain")
-    public String deleteOutBound(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "sn") String sn){
-        OutBound_Sql outBound_sql=new OutBound_Sql();
-        outBound_sql.delete(outBoundMapper,sn);
-        String response=getJson(CODE_OK,null);
-        return response;
-    }
 
 
     @RequestMapping(value = "/userApi/addUser", method = RequestMethod.POST, produces = "text/plain")
     public String addUser(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "username") String username,@ParamsNotNull @RequestParam(value = "password") String password,@ParamsNotNull @RequestParam(value = "nickname") String nickname,@ParamsNotNull @RequestParam(value = "admin") String admin){
-
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         if(admin==null||!admin.equals("andesen")){
            gatewayStatusTask.writeLog("异常添加账号"+admin);
-            return JsonConfig.getJson(CODE_noP,null);
+            return JsonConfig.getJson(CODE_noP,null,lang);
         }
         User user=new User(username,password,nickname,"","all_permission");
         user.setUserkey(username);
         User_sql user_sql=new User_sql();
        int status= user_sql.addUser(userMapper,user);
        if(status==-1){
-           return JsonConfig.getJson(CODE_REPEAT,null);
+           return JsonConfig.getJson(CODE_REPEAT,null,lang);
        }
-        Customer customer=new Customer(username,password,nickname,"","all_permission",user.getUserkey(),"",1);
+         customer=new Customer(username,password,nickname,"","all_permission",user.getUserkey(),"",1);
         Customer_sql customer_sql=new Customer_sql();
         customer_sql.addUser(customerMapper,customer);
 
-        Check_sheet check_sheet=new Check_sheet(nickname+"盘点计划",10,21,5,username);
-        check_sheet.setUdp("192.168.1.55:5656");
+        Check_sheet check_sheet=new Check_sheet();
+        check_sheet.setHost("emqx");
         check_sheet.setSub("GwData");
-        check_sheet.setDefaultsub("");
-        check_sheet.setPort("1883");
-        check_sheet.setHost("120.77.232.76");
+        check_sheet.setPub("SrvData");
+        check_sheet.setPort(1883);
+        check_sheet.setLine_time(3);
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.addCheck_sheet(checkSheetMapper,check_sheet);
         check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
         gatewayStatusTask.writeLog("正常添加账号");
-        return JsonConfig.getJson(CODE_OK,null);
+        return JsonConfig.getJson(CODE_OK,null,lang);
     }
     @RequestMapping(value = "/userApi/deleteDeviceOffline", method = RequestMethod.POST, produces = "text/plain")
     public String deleteDeviceOffline(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "id") int id){
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         DeviceOffline_Sql deviceOfflineSql=new DeviceOffline_Sql();
         deviceOfflineSql.delete(deviceOfflineMapper,id);
-        String response=getJson(CODE_OK,null);
+        String response=getJson(CODE_OK,null,lang);
         return response;
     }
-    @RequestMapping(value = "/userApi/reBorrow", method = RequestMethod.POST, produces = "text/plain")
-    public String reBorrow(HttpServletRequest request,@ParamsNotNull @RequestParam(value = "sn") String sn){
-        long thisTime = System.currentTimeMillis();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
-        Date date=new Date(thisTime);
-        String time=df.format(date);
-        OutBound_Sql outBound_sql=new OutBound_Sql();
-        outBound_sql.update(outBoundMapper,sn,time);
-        DeviceP_Sql deviceP_sql =new DeviceP_Sql();
-        deviceP_sql.update(devicePMapper,sn);
-        return JsonConfig.getJson(CODE_OK,null);
-    }
+
 
 }

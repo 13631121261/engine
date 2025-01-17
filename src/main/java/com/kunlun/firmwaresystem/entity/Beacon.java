@@ -1,20 +1,15 @@
 package com.kunlun.firmwaresystem.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.kunlun.firmwaresystem.entity.device.Devicep;
+import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class Beacon extends Tag {
     int id;
     double n;
-    int isbind;
-    //1:绑定设备资产，，2：绑定人员
-    int bind_type;
-    String device_sn;
-    @TableField(exist = false)
-    String device_name;
     String map_key;
     @TableField(exist = false)
     int sos=-1;
@@ -29,8 +24,10 @@ public class Beacon extends Tag {
     double y=0;
 
 
-
-
+    @TableField(exist = false)
+    ArrayList<Gateway_device> gatewayDevices;
+    @TableField(exist = false)
+    ArrayList<Gateway_device> useDatalist;
 
     public Beacon() {
 
@@ -39,7 +36,7 @@ public class Beacon extends Tag {
     this.mac=mac;
     }
     public Beacon( String mac,
-                  String user_key,int type, String customer_key) {
+                  String user_key,String type, String customer_key) {
 
         this.mac = mac;
         this.type=type;
@@ -49,33 +46,26 @@ public class Beacon extends Tag {
         Date date = new Date();// 获取当前时间
         this.createtime = System.currentTimeMillis()/1000;
         this.customer_key=customer_key;
-        switch (type){
-            case 1:
-               setRun(-1);
-               setSos(-1);
-                break;
-            case 2:
-                setRun(-1);
-                setSos(0);
-                break;
-            case 3:
-                setRun(0);
-                setSos(-1);
-                break;
-            case 4:
-                setRun(0);
-                setSos(0);
-                break;
-        }
+
     }
 
-    public void setBind_type(int bind_type) {
-        this.bind_type = bind_type;
+    public void setGatewayDevices(ArrayList<Gateway_device> gatewayDevices) {
+        this.gatewayDevices = gatewayDevices;
     }
 
-    public int getBind_type() {
-        return bind_type;
+    public ArrayList<Gateway_device> getGatewayDevices() {
+        return gatewayDevices;
     }
+
+    public void setUseDatalist(ArrayList<Gateway_device> useDatalist) {
+        this.useDatalist = useDatalist;
+    }
+
+    public ArrayList<Gateway_device> getUseDatalist() {
+        return useDatalist;
+    }
+
+
 
     public void setX(double x) {
         this.x = x;
@@ -101,13 +91,6 @@ public class Beacon extends Tag {
         this.customer_key = customer_key;
     }
 
-    public String getDevice_name() {
-        return device_name;
-    }
-
-    public void setDevice_name(String device_name) {
-        this.device_name = device_name;
-    }
 
     public double getN() {
         return n;
@@ -126,7 +109,7 @@ public class Beacon extends Tag {
     }
 
     public Beacon(int id, String mac,
-                  String user_key, int type) {
+                  String user_key, String type) {
         this.id = id;
 
         this.mac = mac;
@@ -137,15 +120,6 @@ public class Beacon extends Tag {
 
     }
 
-    public Beacon(String mac,
-                  String uuid,
-                  int major,
-                  int minor,
-                  int rssi_1, int bt) {
-        this.mac = mac;
-        this.bt = bt;
-        type = 1;
-    }
 
 
     public void setProject_key(String project_key) {
@@ -157,15 +131,14 @@ public class Beacon extends Tag {
     }
 
     @Override
-    public void setBt(double bt) {
+    public void setBt(String bt) {
         super.setBt(bt);
     }
 
     @Override
-    public double getBt() {
+    public String getBt() {
         return super.getBt();
     }
-
 
     public int getId() {
         return id;
@@ -184,21 +157,6 @@ public class Beacon extends Tag {
         return sos;
     }
 
-    public int getIsbind() {
-        return isbind;
-    }
-
-    public void setIsbind(int isbind) {
-        this.isbind = isbind;
-    }
-
-    public String getDevice_sn() {
-        return device_sn;
-    }
-
-    public void setDevice_sn(String device_sn) {
-        this.device_sn = device_sn;
-    }
 
     public String getMap_key() {
         return map_key;
@@ -215,27 +173,14 @@ public class Beacon extends Tag {
     public long getCreatetime() {
         return createtime;
     }
-    public void bind(Devicep deviceP){
-        this.device_name=deviceP.getName();
-        this.device_sn=deviceP.getSn();
-        this.isbind=1;
 
-    }
-    public void unbind(){
-        this.device_name="";
-        this.device_sn="";
-        this.isbind=0;
-    }
+
 
     @Override
     public String toString() {
         return "Beacon{" +
                 "id=" + id +
                 ", n=" + n +
-                ", isbind=" + isbind +
-                ", bind_type=" + bind_type +
-                ", device_sn='" + device_sn + '\'' +
-                ", device_name='" + device_name + '\'' +
                 ", map_key='" + map_key + '\'' +
                 ", sos=" + sos +
                 ", run=" + run +

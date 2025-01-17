@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class CheckRecord_Sql {
     public boolean addRecord(CheckRecordMapper recordMapper, Check_record check_record) {
         recordMapper.insert(check_record);
@@ -45,8 +47,8 @@ public class CheckRecord_Sql {
         userLambdaQueryWrapper.eq(Check_record::getUserkey, userkey);
         userLambdaQueryWrapper.orderByDesc(Check_record::getId);
         userIPage = checkRecordMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageCheckRecord pageCheckRecord = new PageCheckRecord(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageCheckRecord;

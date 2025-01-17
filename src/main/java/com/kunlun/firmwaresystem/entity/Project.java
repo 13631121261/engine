@@ -1,22 +1,34 @@
 package com.kunlun.firmwaresystem.entity;
 
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 
+@ApiModel(description = "用户信息")
 public class Project implements Serializable {
+    @ApiModelProperty(value = "用户ID", example = "1")
     int id;
+    @ApiModelProperty(value = "用户名", example = "JohnDoe")
     String project_name;
     String project_key;
     String create_time;
     String info;
     String update_time;
     String user_key;
+    int arssi;
+    double n;
+    double z;
+    int used;
     public Project(){
 
+       this. project_name="项目名称";
+        this.info="项目的详细信息";
     }
-    public Project(    String project_name,
+    public Project(String project_name,
             String info,
             String user_key){
         SimpleDateFormat sdf = new SimpleDateFormat();// 格式化时间
@@ -29,6 +41,39 @@ public class Project implements Serializable {
         this.  user_key=user_key;
         project_key = Base64.getEncoder().encodeToString((project_name + "_" + System.currentTimeMillis()).getBytes()).replaceAll("\\+", "");
     }
+
+    public void setUsed(int used) {
+        this.used = used;
+    }
+
+    public int getUsed() {
+        return used;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public double getZ() {
+        return z;
+    }
+
+    public void setArssi(int arssi) {
+        this.arssi = arssi;
+    }
+
+    public int getArssi() {
+        return arssi;
+    }
+
+    public void setN(double n) {
+        this.n = n;
+    }
+
+    public double getN() {
+        return n;
+    }
+
     public int getId() {
         return id;
     }
@@ -90,5 +135,22 @@ public class Project implements Serializable {
 
     public void setUser_key(String user_key) {
         this.user_key = user_key;
+    }
+
+    @Override
+    public String toString() {
+        return "Project{" +
+                "id=" + id +
+                ", project_name='" + project_name + '\'' +
+                ", project_key='" + project_key + '\'' +
+                ", create_time='" + create_time + '\'' +
+                ", info='" + info + '\'' +
+                ", update_time='" + update_time + '\'' +
+                ", user_key='" + user_key + '\'' +
+                ", arssi=" + arssi +
+                ", n=" + n +
+                ", z=" + z +
+                ", used=" + used +
+                '}';
     }
 }

@@ -7,6 +7,8 @@ import org.eclipse.paho.client.mqttv3.*;
 
 import java.text.SimpleDateFormat;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class MessageCallback implements MqttCallback {
 
 
@@ -28,7 +30,7 @@ public class MessageCallback implements MqttCallback {
     public void connectionLost(Throwable cause) {
 
         // 连接丢失后，一般在这里面进行重连
-        System.out.println("连接断开，可以做重连" + cause.getLocalizedMessage());
+        println("连接断开，可以做重连" + cause.getLocalizedMessage());
         mqttClient.start();
 
     }
@@ -37,25 +39,25 @@ public class MessageCallback implements MqttCallback {
         try {
             MqttMessage mqttMessage = token.getMessage();
 
-            // System.out.println("发送状态---------id===" + token.getMessageId());
+            // println("发送状态---------id===" + token.getMessageId());
              /*   if (redisUtil == null) {
-                System.out.println("Redis为空");
+                println("Redis为空");
             } else {
 
             }*/
         } catch (MqttException e) {
-            System.out.println("MQTT发送回调。读取发送状态异常");
+            println("MQTT发送回调。读取发送状态异常");
         }
     }
 
     public void messageArrived(String topic, MqttMessage message) {
         mqttClient.executorService.submit(new CallBackHandlers(topic, message));
         // subscribe后得到的消息会执行到这里面
-        //   System.out.println("接收消息主题:" + topic);
-        //  System.out.println("接收消息Qos:" + message.getQos());
+        //   println("接收消息主题:" + topic);
+        //  println("接收消息Qos:" + message.getQos());
        /* String data=new String(message.getPayload());
          time=df.format(new Date());// new Date()为获取当前系统时间
-      //  System.out.println("接收消息内容:" + data);
+      //  println("接收消息内容:" + data);
         if(data.isEmpty()||!data.contains("pkt_type")){
             return;
         }
@@ -69,7 +71,7 @@ public class MessageCallback implements MqttCallback {
              gatewayAddress = jsonObject.getString("gw_addr");
              gateway = (Gateway) redisUtil.get(redis_key_gateway + gatewayAddress);
             if (gateway == null) {
-                System.out.println("网关地址有误=" + gatewayAddress);
+                println("网关地址有误=" + gatewayAddress);
                 return;
             }
             //上一次离线时间
@@ -89,7 +91,7 @@ public class MessageCallback implements MqttCallback {
             gateway_sql.updateGateway(gatewayMapper,gateway);
 
         }catch (Exception e){
-            System.out.println("json格式不对=" + data);
+            println("json格式不对=" + data);
             return;
         }
         gateway.setPub_topic(topic);
@@ -100,10 +102,10 @@ public class MessageCallback implements MqttCallback {
         }
         Object object=null;
       // try {
-      //    System.out.println(pkt_type);
+      //    println(pkt_type);
            if(!pkt_type.equals(Constant.pkt_type_scan_report)){
-               System.out.println("接收消息主题:" + topic);
-               System.out.println("接收消息内容:" + data);
+               println("接收消息主题:" + topic);
+               println("接收消息内容:" + data);
            }
             switch (pkt_type) {
                 case Constant.pkt_type_response:
@@ -120,32 +122,32 @@ public class MessageCallback implements MqttCallback {
                     break;
             }
       *//*  }catch (Exception e){
-            System.out.println("异常="+e.getMessage());
+            println("异常="+e.getMessage());
         }*//*
        if(object==null){
-           System.out.println("此消息未有解析，请更新服务器");
+           println("此消息未有解析，请更新服务器");
            return;
        }
         String className=  object.getClass().getSimpleName();
 
         Gateway_sql gateway_sql;
-       // System.out.println("ClassnMame="+className);
+       // println("ClassnMame="+className);
         switch (className){
             case Constant.Scan_report:
                 String Gaddress = ((Scan_report<Scan_report_data>) object).getGw_addr();
                 try {
                     gateway = (Gateway) redisUtil.get(redis_key_gateway + Gaddress);
-                 //   System.out.println("尝试执行转发");
+                 //   println("尝试执行转发");
                     RabbitMessage rabbitMessage=new RabbitMessage(gateway.getProject_key(),data);
                     directExchangeProducer.send(rabbitMessage.toString(),transpond);
-                    //System.out.println("第一个="+((Scan_report<Scan_report_data>) object).getData().getDev_infos()[0].getAddr());
+                    //println("第一个="+((Scan_report<Scan_report_data>) object).getData().getDev_infos()[0].getAddr());
                     for (Scan_report_data_info scanReportDataInfo : ((Scan_report<Scan_report_data>) object).getData().getDev_infos()) {
                         Gateway_devices gateways=null;
                         String json=null;
                         try {
                             json = (String) redisUtil.get(redis_key_device_gateways + scanReportDataInfo.getAddr());
                         }catch (Exception e){
-                            System.out.println("法国红酒封口的"+e.getMessage());
+                            println("ff法国红酒封口的"+e.getMessage());
                         }
                         if (json == null) {
                             gateways=new Gateway_devices();
@@ -160,15 +162,15 @@ public class MessageCallback implements MqttCallback {
                          }catch (Exception e){
                          }
                         }
-                        try {
+                        try {f
                             if(gateway!=null){
 
                                 gateways.getGatewayDevices().add(new Gateway_device(gateway.getAddress(), scanReportDataInfo.getAddr(), scanReportDataInfo.getRssi(), gateway.getSub_topic(), gateway.getPub_topic(),gateway.getX(),gateway.getY(),gateway.getName()));
-                             //    System.out.println("  X="+gateway.getX()+"缓存的设备网关="+gateways.toString());
+                             //    println("  X="+gateway.getX()+"缓存的设备网关="+gateways.toString());
                                 redisUtil.set(redis_key_device_gateways + scanReportDataInfo.getAddr(), gateways.toString());
                             }
                         }catch (Exception e){
-                            System.out.println("wewe"+e.getMessage());
+                            println("wewe"+e.getMessage());
                         }
                     }
 
@@ -181,9 +183,9 @@ public class MessageCallback implements MqttCallback {
                            Ibcn_infos[] ibcn_infos=scanReportDataInfos[i].getIbcn_infos();
                            for(int j=0;j<ibcn_infos.length;j++){
 
-                             *//*  System.out.println("Major="+ibcn_infos[i].getMajor());
-                               System.out.println("Minor="+ibcn_infos[i].getMinor());
-                               System.out.println("Rssi="+ibcn_infos[i].getRssi());*//*
+                             *//*  println("Major="+ibcn_infos[i].getMajor());
+                               println("Minor="+ibcn_infos[i].getMinor());
+                               println("Rssi="+ibcn_infos[i].getRssi());*//*
                            }
                        }
                     }
@@ -220,9 +222,9 @@ public class MessageCallback implements MqttCallback {
                                     }
                                 }
                                 else if(device.getAdv_raw()!=null&device.getAdv_raw().contains("4C4BFFF2")){
-                                   // System.out.println("工卡="+device.getAddr());
+                                   // println("工卡="+device.getAddr());
                                     if(wordcard_aMap==null){
-                                        System.out.println("工卡不存在");
+                                        println("工卡不存在");
 
                                     }
                                     Wordcard_a wordCard_a=wordcard_aMap.get(device.getAddr());
@@ -235,10 +237,10 @@ public class MessageCallback implements MqttCallback {
                                         wordCard_a.setBt(bt);
                                         wordCard_a.setSos(sos);
                                         wordCard_a.setRun(run);
-                                      //  System.out.println(wordCard_a.getMac()+"SOS="+sos+" 运动="+run);
+                                      //  println(wordCard_a.getMac()+"SOS="+sos+" 运动="+run);
                                         map.add(new Record(device.getAddr(), wordcard_aMap.get(device.getAddr()).getName(), gatewayAddress, gateway.getName(), device.getRssi(), wordCard_a));
                                     }else{
-                                        System.out.println("工卡内容为空");
+                                        println("工卡内容为空");
                                     }
                                 }
                                 redisUtil.set(redis_key_tag_map + device.getAddr(), map);
@@ -253,7 +255,7 @@ public class MessageCallback implements MqttCallback {
 
 
                             *//*if(device.getIbcn_uuid()!=null&&device.getIbcn_uuid().length()>10){
-                           //     System.out.println("Rssi="+beacon.getIbcn_rssi_at_1m());
+                           //     println("Rssi="+beacon.getIbcn_rssi_at_1m());
                                 if(beaconsMap.get(device.getAddr())!=null){
                                    ArrayList map=(ArrayList<Record>) redisUtil.get(redis_key_tag_map+device.getAddr());
                                    if(map==null){
@@ -291,7 +293,7 @@ public class MessageCallback implements MqttCallback {
                         }
                     }
                 }catch (Exception e){
-                    System.out.println("异常"+e);
+                    println("异常"+e);
                 }
 
             break;
@@ -302,24 +304,24 @@ public class MessageCallback implements MqttCallback {
             case Constant.ConnectState:
                // ((ConnectState<ConnectDetail>)object).getData().getDevice_state();
                 redisUtil.set(ConnectState+((ConnectState<ConnectDetail>)object).getData().getDevice_addr(),((ConnectState<ConnectDetail>)object).getData().getDevice_state());
-                System.out.println("连接状态="+((ConnectState<ConnectDetail>)object).getData().getDevice_state());
+                println("连接状态="+((ConnectState<ConnectDetail>)object).getData().getDevice_state());
                 //准备就绪，推送
                 if(((ConnectState<ConnectDetail>)object).getData().getDevice_state().equals(ConnectState_redy)){
-                    System.out.println("连接状态已就绪  开始推送至rabittmq=");
+                    println("连接状态已就绪  开始推送至rabittmq=");
                 }
 
                 break;
             case Constant.Scan_filter:
-               // System.out.println("进入两次");
+               // println("进入两次");
                 //取出网关
                 gateway = (Gateway) redisUtil.get(redis_key_gateway + ((Scan_filter )object).getGw_addr());
-               // System.out.println("缓存");
+               // println("缓存");
                 gateway.Filter_name1(((Scan_filter )object).getData().getFilter_name());
                 gateway.Filter_ibeacon1(((Scan_filter )object).getData().isFilter_beacon_b());
                 gateway.Filter_companyId1(((Scan_filter )object).getData().getFilter_comp_ids());
                 gateway.setFilter_rssi(((Scan_filter )object).getData().getFilter_rssi()+"");
                 gateway.setFilter_uuid(((Scan_filter )object).getData().getFilter_uuid());
-               // System.out.println("过滤的UUID==="+((Scan_filter )object).getData().getFilter_uuid());
+               // println("过滤的UUID==="+((Scan_filter )object).getData().getFilter_uuid());
                 //更新后再次缓存
                 redisUtil.set(redis_key_gateway + ((Scan_filter )object).getGw_addr(),gateway);
                 //存到数据库 同步
@@ -371,7 +373,7 @@ public class MessageCallback implements MqttCallback {
                 gateway_sql.updateGateway(gatewayMapper,gateway);
                 break;
         }
-      //  System.out.println(gatewayHand.getPkt_type());
+      //  println(gatewayHand.getPkt_type());
     }
 //解析全部的获取状态
     private Object analysisResponse(JSONObject jsonRaw){
@@ -380,25 +382,25 @@ public class MessageCallback implements MqttCallback {
         try {
         JSONObject data=jsonRaw.getJSONObject("data");
         String resp=data.getString("resp");
-      //  System.out.println("具体的头="+resp);
+      //  println("具体的头="+resp);
         switch (resp){
             case response_sys_get_ver:
                 type= new TypeToken<BleVersion<BleVersionDetail>>(){}.getType();
                 BleVersion<BleVersionDetail> Ble_version=gson.fromJson(jsonRaw.toString(),type);
-                System.out.println("蓝牙版本号=" + Ble_version.getData().getVersion());
+                println("蓝牙版本号=" + Ble_version.getData().getVersion());
                 return Ble_version;
                 //下发连接的状态
             case response_sys_get_wifi_ver:
                 type= new TypeToken<WifiVersion<WifiVersionDetail>>(){}.getType();
                 WifiVersion<  WifiVersionDetail>   Wifi_version=gson.fromJson(jsonRaw.toString(),type);
-                System.out.println("WIfi版本号=" +   Wifi_version.getData().getVersion());
+                println("WIfi版本号=" +   Wifi_version.getData().getVersion());
                 return   Wifi_version;
 
 
             case response_conn_addr_request:
                 type= new TypeToken<ConnectExecute<ConnectExecuteDetail>>(){}.getType();
                 ConnectExecute<ConnectExecuteDetail> connectExecute=gson.fromJson(jsonRaw.toString(),type);
-                System.out.println("连接执行状态=" + connectExecute.getData().isResult());
+                println("连接执行状态=" + connectExecute.getData().isResult());
                 return connectExecute;
             case response_scan_filter_get:
                 Scan_filterDetail scanFilterDetail=new Scan_filterDetail(jsonRaw.getJSONObject("data").toString());
@@ -411,23 +413,23 @@ public class MessageCallback implements MqttCallback {
 
             case response_scan_params_get:
                 try{
-                   // System.out.println("log");
+                   // println("log");
                     Scan_paramsDetail scan_paramsDetail=new Scan_paramsDetail(jsonRaw.getJSONObject("data").toString());
-                  //  System.out.println("log1222");
+                  //  println("log1222");
                     Scan_params scanParams=new Scan_params();
-                  //  System.out.println("333");
+                  //  println("333");
                     scanParams.setData(scan_paramsDetail);
-                  //  System.out.println("444");
+                  //  println("444");
                     scanParams.setGw_addr(jsonRaw.getString("gw_addr"));
-                  //  System.out.println("555");
+                  //  println("555");
                     scanParams.setPkt_type(jsonRaw.getString("pkt_type"));
-                   // System.out.println("666");
+                   // println("666");
                     scanParams.setTime(jsonRaw.getString("time"));
-                   // System.out.println("777");
+                   // println("777");
                     return scanParams;
                 }
                 catch (Exception e){
-                    System.out.println("response_scan_params_get异常输出="+e.toString());
+                    println("response_scan_params_get异常输出="+e.toString());
                     return null;
                 }
             case response_adv_params_get:
@@ -435,9 +437,9 @@ public class MessageCallback implements MqttCallback {
                 Adv_params adv_params=new Adv_params();
                 adv_params.setData(adv_paramsDetail);
                 adv_params.setGw_addr(jsonRaw.getString("gw_addr"));
-              //  System.out.println("555");
+              //  println("555");
                 adv_params.setPkt_type(jsonRaw.getString("pkt_type"));
-              //  System.out.println("666");
+              //  println("666");
                 adv_params.setTime(jsonRaw.getString("time"));
                 return adv_params;
             case sys_app_server:
@@ -453,7 +455,7 @@ public class MessageCallback implements MqttCallback {
 
         }
         }catch (Exception e){
-            System.out.println("解析异常=" + jsonRaw.toString());
+            println("解析异常=" + jsonRaw.toString());
         }
         return null;
     }
@@ -465,37 +467,37 @@ public class MessageCallback implements MqttCallback {
         try {
              data=jsonRaw.getJSONObject("data");
             state =data.getString("state");
-          //  System.out.println("具体的头111="+state);
+          //  println("具体的头111="+state);
 
             switch (state){
                 case state_sta_gw_hb :
                     type= new TypeToken<HeartState<HeartDetail>>(){}.getType();
                     HeartState<HeartDetail> heartState=gson.fromJson(jsonRaw.toString(),type);
-                    System.out.println(heartState.getGw_addr()+"心跳状态=" + heartState.getData().getTicks_cnt());
+                    println(heartState.getGw_addr()+"心跳状态=" + heartState.getData().getTicks_cnt());
 
                    Gateway gateway=(Gateway) redisUtil.get(redis_key_gateway+heartState.getGw_addr());
                    String synStr=(String)redisUtil.get(redis_key_project_sys+gateway.getAddress());
-                   System.out.println("当前心跳="+heartState.getData().getTicks_cnt());
+                   println("当前心跳="+heartState.getData().getTicks_cnt());
                     Integer heart=(Integer) redisUtil.get(redis_key_project_heart+gateway.getAddress());
                     if(heart!=null){
-                        System.out.println("记录心跳心跳="+heart.intValue());
+                        println("记录心跳心跳="+heart.intValue());
                     }
                     if(synStr!=null&&synStr.contains("upgrade")){
                         if(heart!=null&&Math.abs(heartState.getData().getTicks_cnt()-heart)<10){
-                            System.out.println("刚更新过固件，不再执行");
+                            println("刚更新过固件，不再执行");
                             return heartState;
                         }
                     }
                     Gateway_config project=projectMap.get(gateway.getProject_key());
                    if(gateway!=null){
                        redisUtil.set(redis_key_gateway+heartState.getGw_addr(),gateway);
-                      // System.out.println("网关配置="+gateway.toString());
-                      // System.out.println("项目配置="+project.toString());
+                      // println("网关配置="+gateway.toString());
+                      // println("项目配置="+project.toString());
                        if(project!=null){
                            List<String> cmds=new ArrayList<>();
-                       //    System.out.println("项目不为空");
+                       //    println("项目不为空");
                            String cmd="";
-                     //      System.out.println("scan_filter_comp_ids");
+                     //      println("scan_filter_comp_ids");
 
 
                             if(  isChange(project.getFilter_companyId(),gateway.getFilter_companyId())){
@@ -514,7 +516,7 @@ public class MessageCallback implements MqttCallback {
                                 isChange();
                                 cmd= getParamsJson("scan_filter_comp_ids",project,gateway.getAddress(),null,null);
                             }*//*
-         *//*   System.out.println("scan_filter_rssi");
+         *//*   println("scan_filter_rssi");
                             if (!project.getFilter_rssi().equals(gateway.getFilter_rssi())){
 
                                 cmd= getParamsJson("scan_filter_rssi",project,gateway.getAddress(),null,null);
@@ -524,47 +526,47 @@ public class MessageCallback implements MqttCallback {
                                cmd= getParamsJson("scan_filter_ibcn_uuid",project,gateway.getAddress(),null,null);
                                cmds.add(cmd);
                            }
-                        *//*   System.out.println("scan_filter_ibcn_uuid");
+                        *//*   println("scan_filter_ibcn_uuid");
                             if(!project.getFilter_uuid().equals(gateway.getFilter_uuid())){
                                 cmd= getParamsJson("scan_filter_ibcn_uuid",project,gateway.getAddress(),null,null);
                             }*//*
 
-                         //  System.out.println("adv_onoff");
+                         //  println("adv_onoff");
                             if(project.getBroadcast()!=gateway.getBroadcast()){
                                 cmd= getParamsJson("adv_onoff",project,gateway.getAddress(),null,null);
                                 cmds.add(cmd);
                             }
-                         //  System.out.println("scan_filter_ibcn_dev");
+                         //  println("scan_filter_ibcn_dev");
                             if(project.getFilter_ibeacon()!=gateway.getFilter_ibeacon()){
                                 cmd= getParamsJson("scan_filter_ibcn_dev",project,gateway.getAddress(),null,null);
                                 cmds.add(cmd);
                             }
-                         //  System.out.println("scan_request_onoff");
+                         //  println("scan_request_onoff");
                             if(project.getReport_type()!=gateway.getReport_type()){
                                 cmd= getParamsJson("scan_request_onoff",project,gateway.getAddress(),null,null);
                                 cmds.add(cmd);
                             }
-                         //  System.out.println("scan_report_onoff");
+                         //  println("scan_report_onoff");
 
                            if(  isChange(project.getFilter_name(),gateway.getFilter_name())){
                                cmd= getParamsJson("scan_filter_name",project,gateway.getAddress(),null,null);
                                cmds.add(cmd);
                            }
-                        *//*   System.out.println("scan_filter_name");
+                        *//*   println("scan_filter_name");
                             if(!project.getFilter_name().equals(gateway.getFilter_name())){
                                 cmd= getParamsJson("scan_filter_name",project,gateway.getAddress(),null,null);
                             }*//*
-                         //  System.out.println("scan_report_interval"+project.getScan_interval());
-                          // System.out.println("scan_report_interval"+gateway.getScan_interval());
+                         //  println("scan_report_interval"+project.getScan_interval());
+                          // println("scan_report_interval"+gateway.getScan_interval());
                             if(project.getScan_interval()!=gateway.getScan_interval()){
                                 cmd= getParamsJson("scan_report_interval",project,gateway.getAddress(),null,null);
                                 cmds.add(cmd);
                             }
-                          //  System.out.println("setTopic");
+                          //  println("setTopic");
                           *//* if(!project.getSub_topic().equals(gateway.getSub_topic())){
                                cmd= getParamsJson("setTopic",project,gateway.getAddress(),null,null);
                            }*//*
-                           System.out.println(project.getSub_topic()+"    " +gateway.getSub_topic());
+                           println(project.getSub_topic()+"    " +gateway.getSub_topic());
                            if(  isChange(project.getSub_topic(),gateway.getSub_topic())){
                                 if(!gateway.getSub_topic().contains(project.getSub_topic())){
                                     cmd= getParamsJson("setTopic",project,gateway.getAddress(),null,null);
@@ -573,14 +575,14 @@ public class MessageCallback implements MqttCallback {
                            }else{
 
                            }
-                          //  System.out.println("bleVersion"+project.getBle_version());
-                        //   System.out.println("bleVersion"+gateway.getBle_version());
+                          //  println("bleVersion"+project.getBle_version());
+                        //   println("bleVersion"+gateway.getBle_version());
                            if(  isChange(project.getBle_version(),gateway.getBle_version())){
                                if(gateway.getBle_version()!=null&&!gateway.getBle_version().equals(""))
                                {
                                    redisUtil.set(redis_key_project_heart + gateway.getAddress(), heartState.getData().getTicks_cnt());
                                    Ble ble = new Ble();
-                                   // System.out.println("bleVersionaaa");
+                                   // println("bleVersionaaa");
                                    Ble_firmware ble_firmware = ble.getVersionByKey(bleMapper, project.getCustomer_key(), project.getBle_version());
                                    cmd = getParamsJson("bleVersion", project, gateway.getAddress(), ble_firmware, null);
                                    cmds.add(cmd);
@@ -589,13 +591,13 @@ public class MessageCallback implements MqttCallback {
                           *//*
                             if((project.getBle_version()!=null&&gateway.getBle_version()==null)||(project.getBle_version()!=null&&!gateway.getBle_version().equals(project.getBle_version()))){
                                 Ble ble=new Ble();
-                                System.out.println("bleVersionaaa");
+                                println("bleVersionaaa");
                                 Ble_firmware ble_firmware= ble.getVersionByKey(bleMapper,project.getCustomer_key(),project.getBle_version());
-                                System.out.println("bleVersionbbbb");
+                                println("bleVersionbbbb");
                                 cmd= getParamsJson("bleVersion",project,gateway.getAddress(),ble_firmware,null);
-                                System.out.println("bleVersioncccc");
+                                println("bleVersioncccc");
                             }*//*
-                        //   System.out.println("WifiVersion");
+                        //   println("WifiVersion");
                            if(  isChange(project.getWifi_version(),gateway.getWifi_version())){
                                if(gateway.getWifi_version()!=null&&!gateway.getWifi_version().equals("")){
                                    redisUtil.set(redis_key_project_heart+gateway.getAddress(),heartState.getData().getTicks_cnt());
@@ -609,7 +611,7 @@ public class MessageCallback implements MqttCallback {
                                cmd= getParamsJson("scan_report_onoff",project,gateway.getAddress(),null,null);
                                cmds.add(cmd);
                            }
-                       *//*    System.out.println("wifiVersion");
+                       *//*    println("wifiVersion");
                            if((project.getWifi_version()!=null&&gateway.getWifi_version()==null)||(project.getWifi_version()!=null&&!gateway.getWifi_version().equals(project.getWifi_version()))){
                                Wifi wifi=new Wifi();
                                Wifi_firmware wifi_firmware= wifi.getVersionByKey(wifiMapper,project.getCustomer_key(),project.getWifi_version());
@@ -623,7 +625,7 @@ public class MessageCallback implements MqttCallback {
                                         topic=topic+"/"+gateway.getAddress();
                                     }
                                     redisUtil.set(redis_key_project_sys+gateway.getAddress(),cmddata);
-                                    System.out.println("发送的指令="+cmddata+"==="+topic);
+                                    println("发送的指令="+cmddata+"==="+topic);
                                     RabbitMessage rabbitMessage=new RabbitMessage(topic,cmddata);
                                     directExchangeProducer.send(rabbitMessage.toString(),go_to_connect);
                                 }
@@ -631,11 +633,11 @@ public class MessageCallback implements MqttCallback {
                             }
                             else{
                                 redisUtil.set(redis_key_project_sys+gateway.getAddress(),"ok");
-                                System.out.println("网关:"+gateway.getName()+"同步完成了");
+                                println("网关:"+gateway.getName()+"同步完成了");
                             }
                        }
                        else{
-                           System.out.println("项目是空的");
+                           println("项目是空的");
                            /////////后续需要做log，把log文件管理器
                        }
                    }
@@ -643,11 +645,11 @@ public class MessageCallback implements MqttCallback {
                 case state_sta_device_state :
                     type= new TypeToken<ConnectState<ConnectDetail>>(){}.getType();
                     ConnectState<ConnectDetail> connectState=gson.fromJson(jsonRaw.toString(),type);
-                    System.out.println("连接状态=" + connectState.getData().getDevice_state());
+                    println("连接状态=" + connectState.getData().getDevice_state());
                     return connectState;
             }
     }catch (Exception e){
-        System.out.println("222解析异常=" +jsonRaw.toString());
+        println("222解析异常=" +jsonRaw.toString());
     }
         return null;
     }
@@ -674,12 +676,12 @@ private Scan_report analysisScanReport(String jsonRaw){
         try {
             Type type = new TypeToken<Scan_report<Scan_report_data>>(){}.getType();
             Scan_report<Scan_report_data> scan=gson.fromJson(jsonRaw,type);
-         //   System.out.println(scan.getData().getDev_infos()[0].getAddr());
+         //   println(scan.getData().getDev_infos()[0].getAddr());
             return scan;
         }
         catch (Exception e)
         {
-            System.out.println("解析扫描上报数据异常");
+            println("解析扫描上报数据异常");
             return null;
         }
     }

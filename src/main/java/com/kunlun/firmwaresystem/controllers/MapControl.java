@@ -10,6 +10,7 @@ import com.kunlun.firmwaresystem.device.PageMap;
 import com.kunlun.firmwaresystem.entity.Customer;
 
 import com.kunlun.firmwaresystem.entity.User;
+import com.kunlun.firmwaresystem.getLocationTask;
 import com.kunlun.firmwaresystem.interceptor.ParamsNotNull;
 import com.kunlun.firmwaresystem.mappers.MapMapper;
 import com.kunlun.firmwaresystem.sql.Gateway_sql;
@@ -28,8 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.*;
 
-import static com.kunlun.firmwaresystem.NewSystemApplication.GatewayMap;
-import static com.kunlun.firmwaresystem.NewSystemApplication.gatewayMapper;
+import static com.kunlun.firmwaresystem.NewSystemApplication.*;
 import static com.kunlun.firmwaresystem.gatewayJson.Constant.redis_key_gateway;
 import static com.kunlun.firmwaresystem.util.JsonConfig.*;
 
@@ -39,18 +39,21 @@ public class MapControl {
     private RedisUtils redisUtil;
     @Resource
     private MapMapper mapMapper;
-    @RequestMapping(value = "upload/map", method = RequestMethod.POST, produces = "application/json")
+    private com.kunlun.firmwaresystem.getLocationTask getLocationTask;
+
+    @RequestMapping(value = "userApi/map/upload", method = RequestMethod.POST, produces = "application/json")
     public String upload(MultipartHttpServletRequest request){
+            println("上传地图");
             Enumeration<String> parameter= request.getParameterNames();
             String map_key="";
             while (parameter.hasMoreElements()) {
-               // System.out.println("输出key=" + parameter.nextElement());
+               // println("输出key=" + parameter.nextElement());
                 map_key=map_key+request.getParameter(parameter.nextElement());
             }
             if(map_key.length()>0){
-                System.out.println("旧的输出key=" +map_key);
+                println("旧的输出key=" +map_key);
             }else{
-                System.out.println("需要新的key");
+                println("需要新的key");
             }
             Map<String, MultipartFile> map = request.getFileMap();
             List<MultipartFile> files=new ArrayList<>();
@@ -59,7 +62,7 @@ public class MapControl {
                     String svg_data = null;
                     try {
                         svg_data = new String(entry.getValue().getBytes());
-                       // System.out.println(svg_data);
+                       // println(svg_data);
                         if(map_key.length()==0){
                             map_key = Base64.getEncoder().encodeToString(("map" + "_" + System.currentTimeMillis()).getBytes()).replaceAll("\\+", "");
                         }
@@ -70,8 +73,8 @@ public class MapControl {
                         return  "";
                     }
                 }
-            //    System.out.println(entry.getKey());
-             //   System.out.println(entry.getValue().getSize());
+            //    println(entry.getKey());
+             //   println(entry.getValue().getSize());
                 files.add(entry.getValue());
             }
 
@@ -80,6 +83,7 @@ public class MapControl {
     @RequestMapping(value = "userApi/map/getByKey", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getOneMapByKey(HttpServletRequest request) {
         String map_key= request.getParameter("mapkey");
+        com.kunlun.firmwaresystem.getLocationTask.beacon_address = request.getParameter("mac");
         Map_Sql map_sql=new Map_Sql();
         com.kunlun.firmwaresystem.entity.Map map=map_sql.getMapByMapkey(mapMapper,map_key);
         JSONObject jsonObject1 = new JSONObject();
@@ -88,6 +92,7 @@ public class MapControl {
         jsonObject1.put("data", map);
         return jsonObject1;
     }
+
     @RequestMapping(value = "userApi/map/edit", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getOneMapEdit(HttpServletRequest request) {
         String ids= request.getParameter("id");
@@ -104,8 +109,9 @@ public class MapControl {
     public JSONObject updateMap(HttpServletRequest request,@RequestBody com.alibaba.fastjson.JSONObject jsonObject) {
         JSONObject response = null;
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         com.kunlun.firmwaresystem.entity.Map map =new Gson().fromJson(jsonObject.toString(),new TypeToken<com.kunlun.firmwaresystem.entity.Map>(){}.getType());
-        System.out.println(map.toString());
+        println(map.toString());
         if(map.getMap_key()!=null){
             map.setUser_key(customer.getUserkey());
             map.setProject_key(customer.getProject_key());
@@ -119,12 +125,12 @@ public class MapControl {
             }
             Map_Sql map_sql = new Map_Sql();
             if (map_sql.update(mapMapper, map)>0) {
-                response = JsonConfig.getJsonObj(CODE_OK, null);
+                response = JsonConfig.getJsonObj(CODE_OK, null,lang);
             } else {
-                response = JsonConfig.getJsonObj(CODE_REPEAT, null);
+                response = JsonConfig.getJsonObj(CODE_REPEAT, null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }
         return response;
     }
@@ -132,10 +138,12 @@ public class MapControl {
     public com.alibaba.fastjson.JSONObject addMap(HttpServletRequest request,  @RequestBody com.alibaba.fastjson.JSONObject jsonObject) {
         com.alibaba.fastjson.JSONObject response = null;
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         com.kunlun.firmwaresystem.entity.Map map =new Gson().fromJson(jsonObject.toString(),new TypeToken<com.kunlun.firmwaresystem.entity.Map>(){}.getType());
         if(map.getMap_key()!=null){
             map.setUser_key(customer.getUserkey());
             map.setProject_key(customer.getProject_key());
+            map.setProportion(10);
             map.setCustomer_key(customer.getCustomerkey());
             map.setCreate_time(System.currentTimeMillis()/1000);
             String map_key=map.getMap_key();
@@ -143,13 +151,13 @@ public class MapControl {
           //  redisUtil.setRemove(map_key);
             map.setData(svg_data);
             Map_Sql map_sql = new Map_Sql();
-            if (map_sql.addMap(mapMapper, map)) {
-                response = JsonConfig.getJsonObj(CODE_OK, null);
+            if (map_sql.addMap(mapMapper, map,redisUtil)) {
+                response = JsonConfig.getJsonObj(CODE_OK, null,lang);
             } else {
-                response = JsonConfig.getJsonObj(CODE_REPEAT, null);
+                response = JsonConfig.getJsonObj(CODE_REPEAT, null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }
         return response;
     }
@@ -176,7 +184,7 @@ public class MapControl {
 
     @RequestMapping(value = "userApi/map/index1", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getAllbindMap(HttpServletRequest request) {
-       // System.out.println(System.currentTimeMillis());
+       // println(System.currentTimeMillis());
         Customer customer=getCustomer(request);
         Customer user1 = getCustomer(request);
         Map_Sql map_sql = new Map_Sql();
@@ -195,13 +203,13 @@ public class MapControl {
         jsonObject.put("msg", "ok");
         jsonObject.put("count", mapList.size());
         jsonObject.put("data", mapList);
-      //  System.out.println(System.currentTimeMillis());
+      //  println(System.currentTimeMillis());
         return jsonObject;
     }
 
     @RequestMapping(value = "userApi/map/index2", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getAllMap1(HttpServletRequest request) {
-        // System.out.println(System.currentTimeMillis());
+        // println(System.currentTimeMillis());
         Customer user1 = getCustomer(request);
         Map_Sql map_sql = new Map_Sql();
         List<com.kunlun.firmwaresystem.entity.Map> mapList = map_sql.getAllMap(mapMapper, user1.getUserkey(),user1.getProject_key());
@@ -210,7 +218,7 @@ public class MapControl {
         jsonObject.put("msg", "ok");
         jsonObject.put("count", mapList.size());
         jsonObject.put("data", mapList);
-        //  System.out.println(System.currentTimeMillis());
+        //  println(System.currentTimeMillis());
         return jsonObject;
     }
     @RequestMapping(value = "userApi/map/index", method = RequestMethod.GET, produces = "application/json")
@@ -246,13 +254,14 @@ public class MapControl {
         jsonObject.put("msg", "ok");
         jsonObject.put("count", pageMap.getMapList().size());
         jsonObject.put("data",  pageMap.getMapList());
-      //  System.out.println(System.currentTimeMillis());
+      //  println(System.currentTimeMillis());
         return jsonObject;
     }
     @RequestMapping(value = "/userApi/map/del", method = RequestMethod.POST, produces = "application/json")
     public JSONObject deleteMap(HttpServletRequest request, @RequestBody JSONArray jsonArray) {
         String response = "默认参数";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         Map_Sql map_sql = new Map_Sql();
         List<Integer> id=new ArrayList<Integer>();
 
@@ -260,7 +269,7 @@ public class MapControl {
             if(ids!=null&&ids.toString().length()>0){
                 for(String key:GatewayMap.keySet()){
                         if(GatewayMap.get(key).getMap_key().equals(map_sql.getMapById(mapMapper,Integer.parseInt(ids.toString())).getMap_key())){
-                            return JsonConfig.getJsonObj(CODE_10,null);
+                            return JsonConfig.getJsonObj(CODE_10,null,lang);
                         }
                 }
                 id.add(Integer.parseInt(ids.toString()));
@@ -269,12 +278,12 @@ public class MapControl {
         if(id.size()>0){
             int status = map_sql.deletes(mapMapper, id);
             if(status!=-1){
-                return JsonConfig.getJsonObj(CODE_OK,null);
+                return JsonConfig.getJsonObj(CODE_OK,null,lang);
             }else{
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
         }
 
     }
@@ -282,7 +291,7 @@ public class MapControl {
     private Customer getCustomer(HttpServletRequest request) {
         String  token=request.getHeader("batoken");
         Customer customer = (Customer) redisUtil.get(token);
-        //   System.out.println("customer="+customer);
+        //   println("customer="+customer);
         return customer;
     }
 }

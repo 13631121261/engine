@@ -3,9 +3,11 @@ package com.kunlun.firmwaresystem.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 
 public class Tag {
-    int type;
+    @TableField(exist = false)
+    boolean t=false;
+    String type;
     String mac;
-    double bt;
+    String bt;
     String user_key;
     @TableField(exist = false)
     String gateway_address;
@@ -15,6 +17,15 @@ public class Tag {
     long lastTime;
     @TableField(exist = false)
     int rssi;
+
+    public void setT(boolean t) {
+        this.t = t;
+    }
+
+    public boolean isT() {
+        return t;
+    }
+
     public long getLastTime() {
         return lastTime;
     }
@@ -31,11 +42,11 @@ public class Tag {
         this.lastTime = lastTime;
     }
 
-    public void setType(int type) {
+    public void setType(String type) {
         this.type = type;
     }
 
-    public int getType() {
+    public String getType() {
         return type;
     }
 
@@ -47,12 +58,12 @@ public class Tag {
         this.mac = mac;
     }
 
-    public double getBt() {
-        return bt;
+    public void setBt(String bt) {
+        this.bt = bt;
     }
 
-    public void setBt(double bt) {
-        this.bt = bt;
+    public String getBt() {
+        return bt;
     }
 
     public void setRssi(int rssi) {

@@ -14,6 +14,8 @@ import com.kunlun.firmwaresystem.mappers.Gateway_configMapper;
 import java.util.HashMap;
 import java.util.List;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class GatewayConfig_sql {
     public boolean addGatewayConfig(Gateway_configMapper gatewayConfigMapper, Gateway_config gatewayConfig) {
         if (check(gatewayConfigMapper, gatewayConfig)) {
@@ -42,10 +44,10 @@ public class GatewayConfig_sql {
         updateWrapper.set("rules_name", name);
         int result = projectMapper.update(null, updateWrapper);
         if (result > 0) {
-            System.out.println("code=" + result);
+            println("code=" + result);
             return true;
         } else {
-            System.out.println("code=" + result + "---" + gatewayConfig.getConfig_key());
+            println("code=" + result + "---" + gatewayConfig.getConfig_key());
             return false;
         }
     }
@@ -59,8 +61,8 @@ public class GatewayConfig_sql {
             userLambdaQueryWrapper.like(Gateway_config::getName, project_name);
         }
         userIPage = projectMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageGatewayConfig pageGatewayConfig = new PageGatewayConfig(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageGatewayConfig;

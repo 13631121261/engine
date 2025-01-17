@@ -12,7 +12,7 @@ public class Wordcard_a extends Tag {
 
 
     public Wordcard_a(String mac,
-                      String user_key, int type, String customer_key, int id) {
+                      String user_key, String type, String customer_key, int id) {
 
         this.mac = mac;
         this.user_key = user_key;
@@ -22,7 +22,7 @@ public class Wordcard_a extends Tag {
     }
 
     public Wordcard_a(String mac,
-                      String user_key, int type, String customer_key) {
+                      String user_key, String type, String customer_key) {
 
         this.mac = mac;
         this.user_key = user_key;

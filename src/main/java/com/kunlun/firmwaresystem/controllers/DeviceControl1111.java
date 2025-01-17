@@ -45,19 +45,20 @@ public class DeviceControl1111 {
     private RedisUtils redisUtil;
 
     @RequestMapping(value = "/userApi/addWordCarda", method = RequestMethod.POST, produces = "text/plain")
-    public String addWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") Integer type) {
+    public String addWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") String type) {
         String response = "";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Wordcard_a wordCard_a = new Wordcard_a( mac,  user.getUserkey(), type,user.getCustomerkey());
         WordCarda_Sql wordCarda_sql = new WordCarda_Sql();
         if (wordCarda_sql.addWordCarda(wordCardaMapper, wordCard_a)) {
-            response = JsonConfig.getJson(JsonConfig.CODE_OK, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_OK, null,lang);
         } else {
-            response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null,lang);
         }
         wordcard_aMap = wordCarda_sql.getAllWordCarda(wordCardaMapper);
         redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
@@ -65,18 +66,19 @@ public class DeviceControl1111 {
     }
 
     @RequestMapping(value = "/userApi/editWordCarda", method = RequestMethod.POST, produces = "text/plain")
-    public String editWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") Integer type, @ParamsNotNull @RequestParam(value = "id") int id) {
+    public String editWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") String type, @ParamsNotNull @RequestParam(value = "id") int id) {
         String response = "";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Wordcard_a wordCard_a = new Wordcard_a( mac, user.getUserkey(),type,user.getCustomerkey(), id);
         WordCarda_Sql wordCarda_sql = new WordCarda_Sql();
         int code = wordCarda_sql.update(wordCardaMapper, wordCard_a);
-        System.out.println("COde=" + code);
-        response = JsonConfig.getJson(JsonConfig.CODE_OK, null);
+        println("COde=" + code);
+        response = JsonConfig.getJson(JsonConfig.CODE_OK, null,lang);
         wordcard_aMap = wordCarda_sql.getAllWordCarda(wordCardaMapper);
         redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
         return response;
@@ -95,48 +97,22 @@ public class DeviceControl1111 {
     }
 
 
-    @RequestMapping(value = "/userApi/addBeacon", method = RequestMethod.POST, produces = "text/plain")
-    public String addBeacon(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "type") int type, @ParamsNotNull @RequestParam(value = "mac") String mac) {
-        String response = "";
-        Customer user = getCustomer(request);
-        mac=mac.replaceAll(":","");
-        mac=mac.toLowerCase();
-        if(user.getPermission()==null||user.getPermission().getEditbeacon()==0){
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-        else if(user.getPermission().getEditbeacon()==1 ){
-            Beacon beacon = new Beacon(mac, user.getUserkey(),type,user.getCustomerkey());
-            Beacon_Sql beacon_sql = new Beacon_Sql();
-            if (beacon_sql.addBeacon(beaconMapper, beacon)) {
-                response = JsonConfig.getJson(JsonConfig.CODE_OK, null);
-            } else {
-                response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null);
-            }
-            beaconsMap.put(mac,beacon);
-           // NewSystemApplication.beaconsMap = beacon_sql.getAllBeacon(beaconMapper);
-       //     redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
-            return response;
-        }
-        else{
-            return JsonConfig.getJson(CODE_noP,null);
-        }
-
-    }
 
     @RequestMapping(value = "/userApi/editBeacon", method = RequestMethod.POST, produces = "text/plain")
     public String editBeacon(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "mac") String mac,@ParamsNotNull @RequestParam(value = "id") int id) {
         String response = "";
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Beacon beacon = beaconsMap.get(mac);
         Beacon_Sql beacon_sql = new Beacon_Sql();
         if (beacon_sql.update(beaconMapper, beacon)) {
-            response = JsonConfig.getJson(JsonConfig.CODE_OK, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_OK, null,lang);
         } else {
-            response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_REPEAT, null,lang);
         }
         NewSystemApplication.beaconsMap = beacon_sql.getAllBeacon(beaconMapper);
         redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
@@ -146,7 +122,7 @@ public class DeviceControl1111 {
     @RequestMapping(value = "/userApi/getBeacon", method = RequestMethod.GET, produces = "text/plain")
     public String getBeacon(HttpServletRequest request, @RequestParam(value = "mac") String mac, @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "page") String page,
                             @ParamsNotNull @RequestParam(value = "limit") String limit) {
-        System.out.println("请求getBeacon");
+        println("请求getBeacon");
         String response = "";
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
         Customer user = getCustomer(request);
@@ -155,9 +131,7 @@ public class DeviceControl1111 {
        // List<Record> recordList = new ArrayList<>();
         for (Beacon beacon : pageBeacon.getBeaconList()) {
             Beacon beacon1 = beaconsMap.get(beacon.getMac());
-            if(beacon.getIsbind()==1){
-                beacon.setDevice_name(devicePMap.get(beacon.getDevice_sn()).getName());
-            }
+
             beacon.setRssi(beacon1.getRssi());
             beacon.setLastTime(beacon1.getLastTime());
             beacon.setBt(beacon1.getBt());
@@ -194,21 +168,22 @@ public class DeviceControl1111 {
         String response = "";
         //  User user=getCustomer(request);
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         Btag_Sql btag_sql = new Btag_Sql();
         btag_sql.delete(bTagMapper, id);
 
-        response = JsonConfig.getJson(CODE_OK, null);
+        response = JsonConfig.getJson(CODE_OK, null,lang);
         return response;
     }
 
     @RequestMapping(value = "/userApi/deleteBeacon", method = RequestMethod.GET, produces = "text/plain")
     public String deleteBeacon(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "mac") String mac) {
         Customer user = getCustomer(request);
-
+        String lang=user.getLang();
         String response = "";
 
       /*  if (user.getCustomername().equals("test")) {
@@ -216,7 +191,7 @@ public class DeviceControl1111 {
             return response;
         }*/
         if(user.getPermission()==null||user.getPermission().getEditbeacon()==0){
-            return JsonConfig.getJson(CODE_noP,null);
+            return JsonConfig.getJson(CODE_noP,null,lang);
         }else{
             String[] macs=mac.split(",");
             if(macs.length>0){
@@ -226,7 +201,7 @@ public class DeviceControl1111 {
                     beacon_sql.delete(beaconMapper, address);
                 }
             }
-            response = JsonConfig.getJson(CODE_OK, null);
+            response = JsonConfig.getJson(CODE_OK, null,lang);
             return response;
         }
         // User user=getCustomer(request);
@@ -347,13 +322,14 @@ public class DeviceControl1111 {
     @RequestMapping(value = "/userApi/deletebeaconsos", method = RequestMethod.GET, produces = "text/plain")
     public String deletebeaconsos(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "id") int id) {
         Customer user = getCustomer(request);
+        String lang=user.getLang();
         if (user.getUsername().equals("test")) {
-            String response = JsonConfig.getJson(JsonConfig.CODE_noP, null);
+            String response = JsonConfig.getJson(JsonConfig.CODE_noP, null,lang);
             return response;
         }
         RecordSos_Sql recordSos_sql = new RecordSos_Sql();
         recordSos_sql.delete(recordSosMapper, id);
-        String response = JsonConfig.getJson(CODE_OK, null);
+        String response = JsonConfig.getJson(CODE_OK, null,lang);
         return response;
     }
 

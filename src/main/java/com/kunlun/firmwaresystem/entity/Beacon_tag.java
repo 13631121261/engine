@@ -1,5 +1,7 @@
 package com.kunlun.firmwaresystem.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+
 //这个适用于给转发类型的定位工卡
 public class Beacon_tag {
     int id;
@@ -14,8 +16,53 @@ public class Beacon_tag {
     String name;
     double n;
     String customer_key;
+    long create_time;
+    int online;
+    long last_time;
+    String map_key;
+    String map_name;
     public Beacon_tag() {
 
+    }
+
+    public void setOnline(int online) {
+        this.online = online;
+    }
+
+    public int getOnline() {
+        return online;
+    }
+
+    public void setMap_key(String map_key) {
+        this.map_key = map_key;
+    }
+
+    public void setMap_name(String map_name) {
+        this.map_name = map_name;
+    }
+
+    public String getMap_key() {
+        return map_key;
+    }
+
+    public String getMap_name() {
+        return map_name;
+    }
+
+    public void setLast_time(Long last_time) {
+        this.last_time = last_time;
+    }
+
+    public Long getLast_time() {
+        return last_time;
+    }
+
+    public void setCreate_time(long create_time) {
+        this.create_time = create_time;
+    }
+
+    public long getCreate_time() {
+        return create_time;
     }
 
     public double getN() {

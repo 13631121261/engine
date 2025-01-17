@@ -40,7 +40,9 @@ public class Gateway implements Serializable {
     String online_txt;
     long lasttime;
     int broadcast;
-    double x, y;
+    double x, y,z;
+
+
     long onlinetime;
     long revicecount;
     double n;
@@ -67,7 +69,7 @@ public class Gateway implements Serializable {
     String CRC_FLAG;
     @TableField(exist = false)
     String up_time;
-
+    int arssi;
 
 
 
@@ -102,6 +104,14 @@ public class Gateway implements Serializable {
     public Gateway() {
 
 
+    }
+
+    public void setArssi(int arssi) {
+        this.arssi = arssi;
+    }
+
+    public int getArssi() {
+        return arssi;
     }
 
     public void setCRC_FLAG(String CRC_FLAG) {
@@ -260,6 +270,14 @@ public class Gateway implements Serializable {
 
     public double getX() {
         return x;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
+    public double getZ() {
+        return z;
     }
 
     public void setX(double x) {
@@ -478,7 +496,7 @@ public class Gateway implements Serializable {
     }
 
     public void Scan_out1(boolean scan_out) {
-        //    System.out.println("扫描输出="+scan_out);
+        //    println("扫描输出="+scan_out);
         if (scan_out) {
             this.scan_out = 1;
         } else {
@@ -521,7 +539,7 @@ public class Gateway implements Serializable {
     }
 
     public void setFilter_rssi(String filter_rssi) {
-        //  System.out.println("过滤信号="+filter_rssi);
+        //  println("过滤信号="+filter_rssi);
         this.filter_rssi = filter_rssi;
     }
 
@@ -609,7 +627,7 @@ public class Gateway implements Serializable {
     }
 
     public void setFilter_uuid(String filter_uuid) {
-        //System.out.println("设置UUID过滤"+filter_uuid);
+        //println("设置UUID过滤"+filter_uuid);
         this.filter_uuid = filter_uuid;
     }
     public void setFilter_uuid1(String[] filter_uuids) {
@@ -691,7 +709,7 @@ public class Gateway implements Serializable {
     }
 
     public void Filter_companyId1(String[] filter_companyIds) {
-      //  System.out.println("Filter_companyId1长度="+filter_companyId.length());
+      //  println("Filter_companyId1长度="+filter_companyId.length());
         String filter_companyId = "";
         if (filter_companyIds != null && filter_companyIds.length > 0) {
 
@@ -716,7 +734,7 @@ public class Gateway implements Serializable {
         }else{
             filter_companyId="-------";
         }
-        System.out.println("测试一样="+filter_companyId);
+       // println("测试一样="+filter_companyId);
         this.filter_companyId = filter_companyId.toLowerCase();
 
     }
@@ -758,6 +776,7 @@ public class Gateway implements Serializable {
     }
 
     public void setLasttime(long lasttime) {
+    //    System.out.println("最后时间"+lasttime);
         this.lasttime = lasttime;
     }
 
@@ -821,5 +840,6 @@ public class Gateway implements Serializable {
                 ", CRC_FLAG='" + CRC_FLAG + '\'' +
                 ", up_time='" + up_time + '\'' +
                 '}';
+
     }
 }

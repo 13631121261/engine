@@ -60,7 +60,7 @@ public class AlarmControl {
 
     /*@RequestMapping(value = "userApi/map/index1", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getAllbindMap(HttpServletRequest request) {
-       // System.out.println(System.currentTimeMillis());
+       // println(System.currentTimeMillis());
         Customer user1 = getCustomer(request);
         Map_Sql map_sql = new Map_Sql();
         List<com.kunlun.firmwaresystem.entity.Map> mapList = map_sql.getAllMap(mapMapper, user1.getUserkey(),user1.getProject_key());
@@ -73,13 +73,13 @@ public class AlarmControl {
         jsonObject.put("msg", "ok");
         jsonObject.put("count", mapList.size());
         jsonObject.put("data", mapList);
-      //  System.out.println(System.currentTimeMillis());
+      //  println(System.currentTimeMillis());
         return jsonObject;
     }
 
     @RequestMapping(value = "userApi/map/index2", method = RequestMethod.GET, produces = "application/json")
     public JSONObject getAllMap1(HttpServletRequest request) {
-        // System.out.println(System.currentTimeMillis());
+        // println(System.currentTimeMillis());
         Customer user1 = getCustomer(request);
         Map_Sql map_sql = new Map_Sql();
         List<com.kunlun.firmwaresystem.entity.Map> mapList = map_sql.getAllMap(mapMapper, user1.getUserkey(),user1.getProject_key());
@@ -88,7 +88,7 @@ public class AlarmControl {
         jsonObject.put("msg", "ok");
         jsonObject.put("count", mapList.size());
         jsonObject.put("data", mapList);
-        //  System.out.println(System.currentTimeMillis());
+        //  println(System.currentTimeMillis());
         return jsonObject;
     }*/
     @RequestMapping(value = "userApi/Alarm/index", method = RequestMethod.GET, produces = "application/json")
@@ -127,7 +127,8 @@ public class AlarmControl {
     }
     @RequestMapping(value = "/userApi/Alarm/del", method = RequestMethod.POST, produces = "application/json")
     public JSONObject deleteAlarm(HttpServletRequest request, @RequestBody JSONArray jsonArray) {
-
+        Customer customer=getCustomer(request);
+        String lang=customer.getLang();
         List<Integer> id=new ArrayList<Integer>();
 
         for(Object ids:jsonArray){
@@ -138,18 +139,18 @@ public class AlarmControl {
         if(id.size()>0){
             int status = alarmMapper.deleteBatchIds(id);
             if(status!=-1){
-                return JsonConfig.getJsonObj(CODE_OK,null);
+                return JsonConfig.getJsonObj(CODE_OK,null,lang);
             }else{
-                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+                return JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
             }
         }else{
-            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null);
+            return JsonConfig.getJsonObj(CODE_PARAMETER_NULL,null,lang);
         }
     }
     private Customer getCustomer(HttpServletRequest request) {
         String  token=request.getHeader("batoken");
         Customer customer = (Customer) redisUtil.get(token);
-        //   System.out.println("customer="+customer);
+        //   println("customer="+customer);
         return customer;
     }
 }

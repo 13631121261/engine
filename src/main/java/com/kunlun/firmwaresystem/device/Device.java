@@ -1,5 +1,7 @@
 package com.kunlun.firmwaresystem.device;
 
+import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
+
 import java.io.Serializable;
 
 public class Device implements Serializable {

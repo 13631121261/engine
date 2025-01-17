@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.kunlun.firmwaresystem.device.PageArea;
 import com.kunlun.firmwaresystem.device.PageLogs;
 import com.kunlun.firmwaresystem.entity.Area;
 import com.kunlun.firmwaresystem.entity.Logs;
@@ -16,11 +15,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Logs_Sql {
     public int add(LogsMapper logsMapper, Logs area) {
         return logsMapper.insert(area);
     }
+    public void deleteBy15Day(LogsMapper logsMapper, long time){
+        QueryWrapper<Logs> queryWrapper = Wrappers.query();
+        queryWrapper. le("create_time",time);
+        logsMapper.delete(queryWrapper);
 
+    }
 
     public void delete(LogsMapper logsMapper, int id) {
         QueryWrapper<Logs> queryWrapper = Wrappers.query();
@@ -29,7 +35,7 @@ public class Logs_Sql {
     }
 
     public PageLogs selectPageLogs(LogsMapper logsMapper, int page, int limt, String like, String userkey,String project_key) {
-        System.out.println(userkey+" = "+project_key+" = "+like);
+        println(userkey+" = "+project_key+" = "+like);
         LambdaQueryWrapper<Logs> userLambdaQueryWrapper = Wrappers.lambdaQuery();
         Page<Logs> userPage = new Page<>(page, limt);
         IPage<Logs> userIPage;

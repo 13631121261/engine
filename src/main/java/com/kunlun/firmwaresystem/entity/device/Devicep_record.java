@@ -35,7 +35,7 @@ public class Devicep_record {
     String person_name;
 
     String customer_key;
-    double bt;
+    String bt;
 
     int outbound;
 
@@ -198,9 +198,7 @@ public class Devicep_record {
         this.rssi = rssi;
     }
 
-    public void setBt(double bt) {
-        this.bt = bt;
-    }
+
 
     public String getPoint_name() {
         return point_name;
@@ -214,9 +212,7 @@ public class Devicep_record {
         return rssi;
     }
 
-    public double getBt() {
-        return bt;
-    }
+
 
     public void setOutbound(int outbound) {
         this.outbound = outbound;
@@ -242,21 +238,13 @@ public class Devicep_record {
         return person_name;
     }
 
-    public void unbind(){
-        this.bt=0;
-        this.rssi=0;
-        this.bind_mac="";
-        this.isopen=0;
-        this.isbind=0;
-        this.gateway_mac="";
-        this.point_name="";
+
+    public String getBt() {
+        return bt;
     }
-    public void bind(Beacon beacon){
-        this.bt=beacon.getBt();
-        this.rssi=beacon.getRssi();
-        this.bind_mac=beacon.getMac();
-        this.isopen=1;
-        this.isbind=1;
+
+    public void setBt(String bt) {
+        this.bt = bt;
     }
 
     @Override

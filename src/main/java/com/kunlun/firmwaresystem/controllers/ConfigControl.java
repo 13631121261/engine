@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.kunlun.firmwaresystem.NewSystemApplication.GatewayMap;
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
 import static com.kunlun.firmwaresystem.util.JsonConfig.*;
 
 @RestController
@@ -82,15 +83,16 @@ public class ConfigControl {
         jsonObject.put("count", gateway_configs.size());
         jsonObject.put("data", gateway_configs);
         long b=System.currentTimeMillis();
-        System.out.println("getAllConfig="+(b-a));
+        println("getAllConfig="+(b-a));
         return jsonObject;
     }
     @RequestMapping(value = "userApi/config/add", method = RequestMethod.POST, produces = "application/json")
     public JSONObject addConfig(HttpServletRequest request, @RequestBody  JSONObject jsonObject) {
-        System.out.println("上报json="+jsonObject.toString());
+        println("上报json="+jsonObject.toString());
         JSONObject json=null;
         long a=System.currentTimeMillis();
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         GatewayConfig_sql gatewayConfigSql = new GatewayConfig_sql();
         Gateway_config gatewayConfig=new Gson().fromJson(jsonObject.toString(),new  TypeToken<Gateway_config>(){}.getType());
         gatewayConfig.setProject_key(customer.getProject_key());
@@ -105,21 +107,22 @@ public class ConfigControl {
         gatewayConfig.setFilter_mac(gatewayConfig.getFilter_mac());
        boolean status= gatewayConfigSql.addGatewayConfig(gatewayConfigMapper,gatewayConfig);
         if(status){
-             json = JsonConfig.getJsonObj(JsonConfig.CODE_OK,null);
+             json = JsonConfig.getJsonObj(JsonConfig.CODE_OK,null,lang);
         }else{
-            json = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT,null);
+            json = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT,null,lang);
         }
         return json;
     }
     @RequestMapping(value = "userApi/config/edit", method = RequestMethod.POST, produces = "application/json")
     public JSONObject editConfig(HttpServletRequest request, @RequestBody  JSONObject jsonObject) {
-        System.out.println("上报json="+jsonObject.toString());
+        println("上报json="+jsonObject.toString());
         JSONObject json=null;
         long a=System.currentTimeMillis();
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         GatewayConfig_sql gatewayConfigSql = new GatewayConfig_sql();
         Gateway_config gatewayConfig=new Gson().fromJson(jsonObject.toString(),new  TypeToken<Gateway_config>(){}.getType());
-        System.out.println(gatewayConfig);
+       // println(gatewayConfig);
         gatewayConfig.setProject_key(customer.getProject_key());
         gatewayConfig.setUser_key(customer.getUserkey());
         gatewayConfig.setCustomer_key(customer.getCustomerkey());
@@ -130,14 +133,14 @@ public class ConfigControl {
         gatewayConfig.setServices_uuid(gatewayConfig.getServices_uuid());
         gatewayConfig.setFilter_mac(gatewayConfig.getFilter_mac());
         if(!customer.getProject_key().equals(gatewayConfig.getProject_key())){
-            json = JsonConfig.getJsonObj(JsonConfig.CODE_SQL_ERROR,null);
+            json = JsonConfig.getJsonObj(JsonConfig.CODE_SQL_ERROR,null,lang);
         }else{
             int status=gatewayConfigSql.updateGatewayConfig(gatewayConfigMapper,gatewayConfig);
             if(status>-1){
                 NewSystemApplication.gatewayConfigMap=gatewayConfigSql.getAllConfig(gatewayConfigMapper);
-                json = JsonConfig.getJsonObj(JsonConfig.CODE_OK,null);
+                json = JsonConfig.getJsonObj(JsonConfig.CODE_OK,null,lang);
             }else{
-                json = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT,null);
+                json = JsonConfig.getJsonObj(JsonConfig.CODE_REPEAT,null,lang);
             }
         }
 
@@ -148,21 +151,22 @@ public class ConfigControl {
         JSONObject response;
         long a = System.currentTimeMillis();
         Customer customer = getCustomer(request);
+        String lang=customer.getLang();
         GatewayConfig_sql gatewayConfigSql=new GatewayConfig_sql();
         int status=gatewayConfigSql.delete(gatewayConfigMapper,config_key,customer.getUserkey());
         if(status!=-1){
-            response=JsonConfig.getJsonObj(CODE_OK,null);
+            response=JsonConfig.getJsonObj(CODE_OK,null,lang);
             Gateway_sql gateway_sql=new Gateway_sql();
             gateway_sql.updateGateway(redisUtil,gatewayMapper,config_key);
         }else{
-            response=JsonConfig.getJsonObj(CODE_SQL_ERROR,null);
+            response=JsonConfig.getJsonObj(CODE_SQL_ERROR,null,lang);
         }
         return response;
     }
     private Customer getCustomer(HttpServletRequest request) {
         String  token=request.getHeader("batoken");
         Customer customer = (Customer) redisUtil.get(token);
-        //   System.out.println("customer="+customer);
+        //   println("customer="+customer);
         return customer;
     }
 

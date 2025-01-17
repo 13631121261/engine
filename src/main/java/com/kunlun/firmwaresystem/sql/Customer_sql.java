@@ -40,7 +40,20 @@ public class Customer_sql {
         int a = customerMapper.deleteById(id);
         return a;
     }
+    public Customer getCustomerByProjcetKey(CustomerMapper customerMapper,String project_key) {
+        QueryWrapper<Customer> queryWrapper = Wrappers.query();
+        queryWrapper.eq("project_key", project_key);
 
+//若是数据库中符合传入的条件的记录有多条，那就不能用这个方法，会报错
+        List<Customer> a = customerMapper.selectList(queryWrapper);
+        if(a!=null&&a.size()==1){
+            return a.get(0);
+
+        }else
+        {
+            return null;
+        }
+    }
     public List<Customer> getCustomer(CustomerMapper customerMapper,String user_key,String project_key,String quickSearch) {
         QueryWrapper<Customer> queryWrapper = Wrappers.query();
         queryWrapper.eq("userkey", user_key).eq("project_key", project_key).like("username",quickSearch).or().eq("userkey", user_key).eq("project_key", project_key).like("nickname",quickSearch);

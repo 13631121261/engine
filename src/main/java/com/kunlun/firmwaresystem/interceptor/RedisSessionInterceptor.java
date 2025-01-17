@@ -33,7 +33,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
     private LogsMapper logsMapper;
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        System.out.println("handler="+handler);
+       // println("handler="+handler);
         Customer customer=null;
         String token = request.getHeader("batoken");
         if(token==null||token.equals("")){
@@ -47,13 +47,13 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
             }
             if(o.getClass().getName().contains("Customer")){
                 customer=(Customer) (redisTemplate.opsForValue().get(token ));
-               // System.out.println("获取信息"+customer);
+               // println("获取信息"+customer);
                String lang= request.getParameter("lang");
 
                if(lang!=null){
                    customer.setLang(lang);
-                  // System.out.println("语言"+ customer.getLang());
-                  // System.out.println("11获取信息"+customer);
+                  // println("语言"+ customer.getLang());
+                  // println("11获取信息"+customer);
                }
             }
         }
@@ -69,7 +69,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
         //更新时间
         redisTemplate.opsForValue().set(token, customer, 600,TimeUnit.SECONDS);
         customer=(Customer) (redisTemplate.opsForValue().get(token ));
-       // System.out.println("22获取信息"+customer);
+       // println("22获取信息"+customer);
         if (!(handler instanceof HandlerMethod)) {
             return false;
         }
@@ -77,7 +77,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
         for (String s : list) {
             String parameter = request.getParameter(s);
             if (StringUtils.isBlank(parameter)) {
-                String result = JsonConfig.getJson(JsonConfig.CODE_PARAMETER_NULL, s);
+                String result = JsonConfig.getJson(JsonConfig.CODE_PARAMETER_NULL, s,"en");
                 response.setHeader("Content-type", "application/json;charset=UTF-8");
                 response.setHeader("Access-Control-Allow-Origin", "*");//跨域
                 response.getWriter().write(result);
@@ -111,6 +111,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
         if(handler.toString().contains("Logs")){
             return true;
         }
+
         Logs logs=new Logs();
         logs.setAgent(request.getHeader("User-Agent"));
         logs.setCreate_time(System.currentTimeMillis()/1000);
@@ -188,7 +189,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
                 else if(data.contains("add")){
                     b="Add";
                 } else if(data.contains("index")){
-                    b="Show";
+                    b="View";
                 }else if(data.contains("addProject")){
                     b="Project-Add";
                 }
@@ -202,7 +203,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
                 }
                 String s[]=data.split("/");
                 if(s!=null&&s.length>=3){
-                    //     System.out.println(s[2]);
+                    //     println(s[2]);
                     switch (s[2]){
                         case "gateway":
                             a="Gateway";
@@ -243,7 +244,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
                 }
                     String s1[]=data.split("/");
                     if(s1!=null&&s1.length>=3){
-                        //     System.out.println(s[2]);
+                        //     println(s[2]);
                         switch (s1[2]){
                             case "gateway":
                                 a="网关管理";
@@ -313,7 +314,7 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
         for (Parameter parameter : parameters) {
             //判断这个参数时候被加入了 ParamsNotNull. 的注解
             //.isAnnotationPresent()  这个方法可以看一下
-          //  System.out.println("参数11="+parameter.getName());
+          //  println("参数11="+parameter.getName());
             if (parameter.isAnnotationPresent(ParamsNotNull.class)) {
                 list.add(parameter.getName());
             }
@@ -326,7 +327,6 @@ public class RedisSessionInterceptor implements HandlerInterceptor {
         while (parameters.hasMoreElements()){
             list.add(parameters.nextElement().toString());
         }
-
         return list;
     }
 }

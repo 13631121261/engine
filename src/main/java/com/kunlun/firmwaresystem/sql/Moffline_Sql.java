@@ -11,6 +11,8 @@ import com.kunlun.firmwaresystem.entity.Moffline;
 import com.kunlun.firmwaresystem.mappers.AreaMapper;
 import com.kunlun.firmwaresystem.mappers.MofflineMapper;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Moffline_Sql {
     public boolean addMoffline(MofflineMapper mofflineMapper, Moffline moffline) {
 
@@ -41,8 +43,8 @@ public class Moffline_Sql {
         userLambdaQueryWrapper.eq(Moffline::getUserkey, userkey);
         userLambdaQueryWrapper.orderByDesc(Moffline::getId);
         userIPage = mofflineMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageMoffline pageMoffline = new PageMoffline(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageMoffline;

@@ -3,6 +3,8 @@ package com.kunlun.firmwaresystem.gatewayJson.type_response;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Scan_filterDetail extends ResponseHead {
 
 
@@ -27,7 +29,7 @@ public class Scan_filterDetail extends ResponseHead {
         try {
             analysis(json);
         }catch (Exception e){
-            System.out.println("在这里异常了"+e.toString());
+            println("在这里异常了"+e.toString());
         }
     }
 
@@ -89,16 +91,16 @@ public class Scan_filterDetail extends ResponseHead {
         result = jsonObject.getBoolean("result");
         resp = jsonObject.getString("resp");
         filter_rssi_b = jsonObject.getJSONObject("scan_filter_rssi").getBoolean("enable");
-        //    System.out.println("信号过滤开关"+filter_rssi_b);
+        //    println("信号过滤开关"+filter_rssi_b);
         if (filter_rssi_b) {
             filter_rssi = jsonObject.getJSONObject("scan_filter_rssi").getIntValue("value");
-            //   System.out.println("信号过滤开关="+filter_rssi);
+            //   println("信号过滤开关="+filter_rssi);
         }
         filter_name_b = jsonObject.getJSONObject("scan_filter_name").getBoolean("enable");
         if (filter_name_b) {
             int number = jsonObject.getJSONObject("scan_filter_name").getIntValue("num");
             filter_name = new String[number];
-            //    System.out.println("1111");
+            //    println("1111");
             JSONArray jsonArray = jsonObject.getJSONObject("scan_filter_name").getJSONArray("value");
             for (int i = 0; i < number; i++) {
                 filter_name[i] = jsonArray.getJSONObject(i).getString("name");
@@ -110,11 +112,11 @@ public class Scan_filterDetail extends ResponseHead {
             filter_dev_mac[0]=jsonObject.getJSONObject("scan_filter_dev_mac").getString("start");
             filter_dev_mac[1]=jsonObject.getJSONObject("scan_filter_dev_mac").getString("end");
         }
-        //   System.out.println("2222");
+        //   println("2222");
         filter_beacon_b = jsonObject.getJSONObject("scan_filter_ibcn_dev").getBoolean("enable");
-        //  System.out.println("3333");
+        //  println("3333");
         filter_uuid_b = jsonObject.getJSONObject("scan_filter_ibcn_uuid").getBoolean("enable");
-        //  System.out.println("4444");
+        //  println("4444");
         if (filter_uuid_b) {
             filter_uuid=new String[jsonObject.getJSONObject("scan_filter_ibcn_uuid").getIntValue("num")];
             if(filter_uuid.length==1){
@@ -128,7 +130,7 @@ public class Scan_filterDetail extends ResponseHead {
 
         }
         scan_filter_serv_data_uuid_b = jsonObject.getJSONObject("scan_filter_serv_data_uuid").getBoolean("enable");
-        System.out.println("6666"+scan_filter_serv_data_uuid_b);
+       // println("6666"+scan_filter_serv_data_uuid_b);
         if (scan_filter_serv_data_uuid_b) {
             scan_filter_serv_data_uuid=new String[jsonObject.getJSONObject("scan_filter_serv_data_uuid").getIntValue("num")];
 
@@ -139,13 +141,13 @@ public class Scan_filterDetail extends ResponseHead {
 
 
         }
-         System.out.println("6666");
+       //  println("6666");
         filter_companyids_b = jsonObject.getJSONObject("scan_filter_comp_ids").getBoolean("enable");
         if (filter_companyids_b) {
-              System.out.println("7777");
+              println("7777");
             int number = jsonObject.getJSONObject("scan_filter_comp_ids").getIntValue("num");
             filter_comp_ids = new String[number];
-            //  System.out.println("8888");
+            //  println("8888");
             JSONArray jsonArray = jsonObject.getJSONObject("scan_filter_comp_ids").getJSONArray("value");
             for (int i = 0; i < number; i++) {
                 filter_comp_ids[i] = jsonArray.getJSONObject(i).getString("id").toUpperCase();

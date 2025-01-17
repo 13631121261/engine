@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Btag_Sql {
     public boolean addBeaconTag(BTagMapper bTagMapper, Beacon_tag beacon_tag) {
         boolean status = check(bTagMapper, beacon_tag);
@@ -32,7 +34,7 @@ public class Btag_Sql {
         List<Beacon_tag> beacons = beaconMapper.selectList(queryWrapper);
         HashMap<String, Beacon_tag> beaconHashMap = new HashMap();
         for (Beacon_tag beacon_tag : beacons) {
-            System.out.println("初始化" + beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor());
+            println("初始化" + beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor());
             beaconHashMap.put(beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor(), beacon_tag);
         }
         return beaconHashMap;
@@ -43,7 +45,7 @@ public class Btag_Sql {
         List<Beacon_tag> beacons = beaconMapper.selectList(queryWrapper);
         HashMap<String, Beacon_tag> beaconHashMap = new HashMap();
         for (Beacon_tag beacon_tag : beacons) {
-            System.out.println("初始化" + beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor());
+            println("初始化" + beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor());
             beaconHashMap.put(beacon_tag.getProject_key() + beacon_tag.getMajor() + "/" + beacon_tag.getMinor(), beacon_tag);
         }
         return beaconHashMap;
@@ -59,13 +61,13 @@ public class Btag_Sql {
         return true;
     }
 
-    public PageBeaconTag selectPageTag(BTagMapper bTagMapper, int page, int limt, String project_name, String user_key, String deviceName) {
+    public PageBeaconTag selectPageTag(BTagMapper bTagMapper, int page, int limt, String project_key, String user_key,String q) {
         LambdaQueryWrapper<Beacon_tag> userLambdaQueryWrapper = Wrappers.lambdaQuery();
         Page<Beacon_tag> userPage = new Page<>(page, limt);
         IPage<Beacon_tag> userIPage;
-        userLambdaQueryWrapper.like(Beacon_tag::getProject_name, project_name);
-        userLambdaQueryWrapper.like(Beacon_tag::getName, deviceName);
-        userLambdaQueryWrapper.eq(Beacon_tag::getCustomer_key, user_key);
+        userLambdaQueryWrapper.eq(Beacon_tag::getProject_key, project_key);
+        userLambdaQueryWrapper.like(Beacon_tag::getName, q);
+        userLambdaQueryWrapper.eq(Beacon_tag::getUser_key, user_key);
         userIPage = bTagMapper.selectPage(userPage, userLambdaQueryWrapper);
         PageBeaconTag pageRecord = new PageBeaconTag(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageRecord;
@@ -85,7 +87,21 @@ public class Btag_Sql {
         List<Beacon_tag> a = bTagMapper.selectList(queryWrapper);
         if (a != null && a.size() > 0) {
             return true;
-        } else
+        } else{
             return false;
+        }
+    }
+
+    public Beacon_tag getOne(BTagMapper bTagMapper,int  major,int minor) {
+        QueryWrapper<Beacon_tag> queryWrapper = Wrappers.query();
+        queryWrapper.eq("major",major);
+        queryWrapper.eq("minor", minor);
+        // queryWrapper.eq("username", user.getCustomername());
+//若是数据库中符合传入的条件的记录有多条，那就不能用这个方法，会报错
+        List<Beacon_tag> a = bTagMapper.selectList(queryWrapper);
+        if (a != null && a.size() ==1) {
+            return a.get(0);
+        } else
+            return null;
     }
 }

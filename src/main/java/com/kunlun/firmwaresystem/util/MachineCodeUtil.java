@@ -8,18 +8,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Scanner;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class MachineCodeUtil {
     public static final String LINUX_OS_NAME = "LINUX";
     public static final String SYSTEM_PROPERTY_OS_NAME = "os.name";
 
 
     public static void main(String[] args) throws IOException {
-      //  System.out.println(getThisMachineCode());
-      //  System.out.println(getCpuId());
-   //     System.out.println(getBiosUuid());
-//        System.out.println("编码:"+encode(getThisMachineCode()));
-    //    System.out.println("编码:"+encode(getThisMachineCode()));
-        System.out.println("解码:"+encode("178BFBFF00860F016FB55D78-B9E5-11EA-80DE-002B67BD78A6","KUNLUN")+"acfc");
+      //  println(getThisMachineCode());
+      //  println(getCpuId());
+   //     println(getBiosUuid());
+//        println("编码:"+encode(getThisMachineCode()));
+    //    println("编码:"+encode(getThisMachineCode()));
+        println("解码:"+encode("178BFBFF00860F016FB55D78-B9E5-11EA-80DE-002B67BD78A6","KUNLUN")+"acfc");
 
 
         double hr=69;
@@ -28,7 +30,7 @@ public class MachineCodeUtil {
 
        double h =bp_a*(hr/average_hr+temp/average_temp)/2.64;
         double p =bp_b*(hr/average_hr+temp/average_temp)/2.64;
-        System.out.println("收缩压="+h+"  舒张压="+p);
+        println("收缩压="+h+"  舒张压="+p);
     }
     public static String  getThisMachineCodeMd5(){
         return encode(getThisMachineCode(),"$$$$****");

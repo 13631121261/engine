@@ -9,6 +9,8 @@ import com.kunlun.firmwaresystem.device.PageDeviceP_record;
 import com.kunlun.firmwaresystem.entity.device.Devicep_record;
 import com.kunlun.firmwaresystem.mappers.DeviceP_recordMapper;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class DevicePrecord_Sql {
     public boolean addDeviceP(DeviceP_recordMapper devicePMapper, Devicep_record deviceP) {
 
@@ -42,8 +44,8 @@ public class DevicePrecord_Sql {
         userLambdaQueryWrapper.like(Devicep_record::getSn, deviceSn);
         userLambdaQueryWrapper.like(Devicep_record::getName, name);
         userIPage = devicePMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageDeviceP_record pageDeviceP = new PageDeviceP_record(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageDeviceP;

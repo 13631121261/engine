@@ -10,6 +10,8 @@ import com.kunlun.firmwaresystem.entity.Record;
 import com.kunlun.firmwaresystem.entity.Tag;
 import com.kunlun.firmwaresystem.mappers.RecordMapper;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Record_Sql {
     public void addRecord(RecordMapper recordMapper, Record record) {
         // boolean status = check(recordMapper, record);
@@ -24,7 +26,7 @@ public class Record_Sql {
            List<Beacon> beacons = beaconMapper.selectList(null);
            HashMap<String,Beacon> beaconHashMap=new HashMap<>();
            for(Beacon beacon:beacons) {
-               //System.out.println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
+               //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
                beaconHashMap.put(beacon.getMac(),beacon);
            }
            return beaconHashMap;
@@ -43,8 +45,8 @@ public class Record_Sql {
         userLambdaQueryWrapper.eq(Record::getDevice_mac, mac);
         userLambdaQueryWrapper.eq(Record::getCustomerkey, userkey);
         userIPage = recordMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageRecord pageRecord = new PageRecord(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageRecord;

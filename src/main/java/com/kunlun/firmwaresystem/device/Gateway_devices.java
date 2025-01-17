@@ -1,8 +1,10 @@
 package com.kunlun.firmwaresystem.device;
 
 import com.google.gson.Gson;
+import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Gateway_devices {
     ArrayList<Gateway_device> gatewayDevices;

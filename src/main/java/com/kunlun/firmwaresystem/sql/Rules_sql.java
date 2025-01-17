@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Rules_sql {
     public boolean addRules(RulesMapper rulesMapper, Rules rules) {
         if (!checkRules(rulesMapper, rules)) {
@@ -30,8 +32,8 @@ public class Rules_sql {
         IPage<Rules> userIPage;
         userLambdaQueryWrapper.eq(Rules::getUser_key,userKey);
         userIPage = rulesMapper.selectPage(userPage, userLambdaQueryWrapper);
-        System.out.println("总页数： " + userIPage.getPages());
-        System.out.println("总记录数： " + userIPage.getTotal());
+        println("总页数： " + userIPage.getPages());
+        println("总记录数： " + userIPage.getTotal());
         //   userIPage.getRecords().forEach(System.out::println);
         PageRules pageRules = new PageRules(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageRules;
@@ -51,7 +53,7 @@ public class Rules_sql {
         List<Rules> rulesList = rulesMapper.selectList(queryWrapper);
         HashMap<String, Rules> rulesMap = new HashMap<>();
         for (Rules rules : rulesList) {
-            //System.out.println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
+            //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
             rulesMap.put(rules.getRule_key(), rules);
         }
         return rulesMap;
@@ -61,7 +63,7 @@ public class Rules_sql {
         List<Rules> rulesList = rulesMapper.selectList(null);
         HashMap<String, Rules> rulesMap = new HashMap<>();
         for (Rules rules : rulesList) {
-            //System.out.println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
+            //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
             rulesMap.put(rules.getRule_key(), rules);
         }
         return rulesMap;

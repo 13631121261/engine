@@ -2,13 +2,12 @@ spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     username: root
-    password: 123456
-    url: jdbc:mysql://localhost:3306/kunlun_system?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+    password: qaz741
+    url: jdbc:mysql://localhost:9906/engine?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true
   mvc:
    hiddenmethod:
     filter:
       enabled: true
-
   servlet:
     multipart:
       max-file-size: 100MB
@@ -53,12 +52,13 @@ mybatis-plus:
       table-underline: false
   configuration:
     map-underscore-to-camel-case: false
-    log-impl:  org.apache.ibatis.logging.nologging.NoLoggingImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 server:
-  port: 8001
-
-
-
-log-impl: org.apache.ibatis.logging.stdout.StdOutImpl /org.apache.ibatis.logging.nologging.NoLoggingImpl
+  port: 7001
+netty:
+  tcp:
+    client:
+      port: 802
+#log-impl: org.apache.ibatis.logging.stdout.StdOutImpl /org.apache.ibatis.logging.nologging.NoLoggingImpl
 
 

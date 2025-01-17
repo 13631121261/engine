@@ -20,6 +20,9 @@ public class DirectExchangeRabbitMQConfig {
 
     //推送给网页地图展示
     public static final String sendtoMap = "sendtoMap";
+    //推送给网页做调试
+    public static final String sendtoMap_debug = "sendtoMap_debug";
+
     //  private static final String queue3BindingKey = "#";
     // 声明直连交换机
     @Bean
@@ -32,20 +35,6 @@ public class DirectExchangeRabbitMQConfig {
     public Queue messageQueue1() {
         return new Queue("sendToGateway");
     }
-
-/*
-    @Bean
-    public Queue messageQueue2() {
-        return new Queue("scan_report");
-    }
-
-    @Bean
-    public Queue messageQueue3() {
-        return new Queue("state");
-    }
-*/
-
-
     @Bean
     public Queue messageQueue2() {
         return new Queue("transpond");
@@ -66,6 +55,11 @@ public class DirectExchangeRabbitMQConfig {
     public Queue messageQueue6() {
         return new Queue(sendtoMap);
     }
+    @Bean
+    public Queue messageQueue7() {
+        return new Queue(sendtoMap_debug);
+    }
+
 
     // 向主题交换机上绑定队列
     @Bean
@@ -105,6 +99,12 @@ public class DirectExchangeRabbitMQConfig {
         return BindingBuilder.bind(messageQueue6)
                 .to(directExchange)
                 .with(sendtoMap);
+    }
+    @Bean
+    Binding bindingQueue7Exchange(Queue messageQueue7, DirectExchange directExchange) {
+        return BindingBuilder.bind(messageQueue7)
+                .to(directExchange)
+                .with(sendtoMap_debug);
     }
 /*
     @Bean

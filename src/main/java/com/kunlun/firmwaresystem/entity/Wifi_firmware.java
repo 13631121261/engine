@@ -5,32 +5,25 @@ import java.io.Serializable;
 public class Wifi_firmware implements Serializable {
     String version;
     int id;
-    String remake;
-    String uploadtime;
-
+    long uploadtime;
     String user_key;
-    String company_name;
-    String customer_key;
+    String project_key;
     String url;
+    String remake;
 
-
-    public Wifi_firmware(String url, String remake, String uploadtime, String company_name, String user_key, String version, String customer_key) {
+    public Wifi_firmware(String url, String remake, long uploadtime, String user_key, String version, String project_key) {
         this.version = version;
         this.user_key = user_key;
-        this.company_name = company_name;
+
         this.remake = remake;
         this.uploadtime = uploadtime;
         this.url = url;
-        this.customer_key=customer_key;
+        this.project_key=project_key;
+    }
+    public Wifi_firmware(){
+
     }
 
-    public String getCustomer_key() {
-        return customer_key;
-    }
-
-    public void setCustomer_key(String customer_key) {
-        this.customer_key = customer_key;
-    }
 
     public String getVersion() {
         return version;
@@ -56,14 +49,21 @@ public class Wifi_firmware implements Serializable {
         this.remake = remake;
     }
 
-    public String getUploadtime() {
-        return uploadtime;
+    public void setProject_key(String project_key) {
+        this.project_key = project_key;
     }
 
-    public void setUploadtime(String uploadtime) {
+    public void setUploadtime(long uploadtime) {
         this.uploadtime = uploadtime;
     }
 
+    public String getProject_key() {
+        return project_key;
+    }
+
+    public long getUploadtime() {
+        return uploadtime;
+    }
 
     public String getUser_key() {
         return user_key;
@@ -73,13 +73,6 @@ public class Wifi_firmware implements Serializable {
         this.user_key = user_key;
     }
 
-    public String getCompany_name() {
-        return company_name;
-    }
-
-    public void setCompany_name(String company_name) {
-        this.company_name = company_name;
-    }
 
 
     public String getUrl() {
@@ -89,20 +82,17 @@ public class Wifi_firmware implements Serializable {
     public void setUrl(String url) {
         this.url = url;
     }
-    /*
+
     @Override
     public String toString() {
         return "Wifi_firmware{" +
                 "version='" + version + '\'' +
                 ", id=" + id +
+                ", uploadtime=" + uploadtime +
+                ", user_key='" + user_key + '\'' +
+                ", project_key='" + project_key + '\'' +
+                ", url='" + url + '\'' +
                 ", remake='" + remake + '\'' +
-                ", uploadtime='" + uploadtime + '\'' +
-                ", customization=" + customization +
-                ", customization_name='" + customization_name + '\'' +
-                ", finishtime='" + finishtime + '\'' +
-                ", author='" + author + '\'' +
-                ", administrator='" + administrator + '\'' +
-                ", auto=" + auto +
                 '}';
-    }*/
+    }
 }

@@ -6,12 +6,11 @@ import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.kunlun.firmwaresystem.NewSystemApplication;
 import com.kunlun.firmwaresystem.device.Gateway;
-import com.kunlun.firmwaresystem.device.PageArea;
 import com.kunlun.firmwaresystem.device.PageGateway;
-import com.kunlun.firmwaresystem.entity.Area;
+import com.kunlun.firmwaresystem.entity.Project;
 import com.kunlun.firmwaresystem.entity.web_Structure.GatewayTree;
-import com.kunlun.firmwaresystem.mappers.AreaMapper;
 import com.kunlun.firmwaresystem.mappers.GatewayMapper;
 import com.kunlun.firmwaresystem.util.RedisUtils;
 
@@ -20,13 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.kunlun.firmwaresystem.NewSystemApplication.redisUtil;
+import static com.kunlun.firmwaresystem.NewSystemApplication.*;
 import static com.kunlun.firmwaresystem.gatewayJson.Constant.*;
 
 public class Gateway_sql {
     public boolean addGateway(GatewayMapper gatewayMapper, Gateway gateway) {
         if (!checkGateway(gatewayMapper, gateway)) {
-            System.out.println("输出="+gateway.toString());
+            println("输出="+gateway.toString());
             gatewayMapper.insert(gateway);
             return true;
         } else {
@@ -35,12 +34,13 @@ public class Gateway_sql {
     }
 
     public int updateGateway(GatewayMapper gatewayMapper, Gateway gateway) {
-       // System.out.println("更新网关="+gateway.toString());
+      //  println("更新网关3="+gateway);
         UpdateWrapper updateWrapper = new UpdateWrapper();//照搬
         updateWrapper.eq("address", gateway.getAddress());
         return gatewayMapper.update(gateway, updateWrapper);
     }
     public int updateGateway(GatewayMapper gatewayMapper,int id,int isyn) {
+        println("更新网关2=");
         UpdateWrapper updateWrapper = new UpdateWrapper();//照搬
         updateWrapper.set("isyn", isyn);
         updateWrapper.eq("id", id);
@@ -89,7 +89,6 @@ public class Gateway_sql {
         redisUtil.set(redis_key_gateway + address, gateway);
         return gatewayMapper.update(null, updateWrapper);
     }
-
     /**
      * 查询是否已c存在此网关设备
      */
@@ -108,12 +107,43 @@ public class Gateway_sql {
        Gateway gateway= gatewayMapper.selectById(id);
        return  gateway;
     }
+    public Gateway getGatewayByMac(GatewayMapper gatewayMapper, String mac) {
+        QueryWrapper<Gateway> queryWrapper = Wrappers.query();
+        queryWrapper.eq("address",mac);
+        List<Gateway> list=gatewayMapper.selectList(queryWrapper);
+        if(list!=null&&list.size()==1){
+            return list.get(0);
+        }
+        return  null;
+    }
 
     public Map<String, String> getAllGateway(RedisUtils redisUtil, GatewayMapper gatewayMapper) {
+        println("执行一次获取全部数据");
         List<Gateway> gatewayList = gatewayMapper.selectList(null);
         HashMap<String, String> gatewayMap = new HashMap<>();
+        Project_Sql projectSql=new Project_Sql();
+        List<Project> projects=   projectSql.getAllProject(projectMapper);
         for (Gateway gateway : gatewayList) {
-            //System.out.println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
+            for(Project project:projects){
+                if(gateway.getProject_key().equals(project.getProject_key())){
+                    if(project.getArssi()==0){
+                        project.setArssi(NewSystemApplication.rssi_At_1m);
+                        projectMapper.updateById(project);
+                    }
+                    if(project.getN()==0){
+                        project.setN(NewSystemApplication.N);
+                        projectMapper.updateById(project);
+                    }
+                    if(gateway.getArssi()==0||gateway.getN()==0){
+                        gateway.setArssi(project.getArssi());
+                        gateway.setN(project.getN());
+                    }
+                    if(gateway.getZ()==0){
+                        gateway.setZ(project.getZ());
+                    }
+                }
+            }
+            //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
             redisUtil.set(redis_key_gateway + gateway.getAddress(), gateway);
             gatewayMap.put(gateway.getAddress(), gateway.getAddress());
             redisUtil.set(redis_key_gateway_onLine_time + gateway.getAddress(), null);
@@ -124,12 +154,14 @@ public class Gateway_sql {
 
 
     public Map<String, String> updateGateway(RedisUtils redisUtil, GatewayMapper gatewayMapper,String config_key) {
+        println("更新一次取全部数据");
         QueryWrapper<Gateway> queryWrapper = Wrappers.query();
         queryWrapper.eq("config_key",config_key);
         List<Gateway> gatewayList = gatewayMapper.selectList(queryWrapper);
         HashMap<String, String> gatewayMap = new HashMap<>();
+
         for (Gateway gateway : gatewayList) {
-            //System.out.println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
+            //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
             gateway.setConfig_name("不关联配置");
             gateway.setConfig_key("noconfig_key");
             updateGateway(gatewayMapper,gateway);
@@ -139,14 +171,38 @@ public class Gateway_sql {
     }
 
     public Map<String, Gateway> getAllGateway( GatewayMapper gatewayMapper) {
+        println("执行11一次获取全部数据");
         List<Gateway> gatewayList = gatewayMapper.selectList(null);
         HashMap<String, Gateway> gatewayMap = new HashMap<>();
+        Project_Sql projectSql=new Project_Sql();
+        List<Project> projects=   projectSql.getAllProject(projectMapper);
         for (Gateway gateway : gatewayList) {
+            for(Project project:projects){
+                if(gateway.getProject_key().equals(project.getProject_key())){
+                    if(project.getArssi()==0){
+                        project.setArssi(NewSystemApplication.rssi_At_1m);
+
+                        projectMapper.updateById(project);
+                    }
+                    if(project.getN()==0){
+                        project.setN(NewSystemApplication.N);
+                        projectMapper.updateById(project);
+                    }
+                    if(gateway.getArssi()==0||gateway.getN()==0){
+                        gateway.setArssi(project.getArssi());
+                        gateway.setN(project.getN());
+                    }
+                    if(gateway.getZ()==0){
+                        gateway.setZ(project.getZ());
+                    }
+                }
+            }
             gatewayMap.put(gateway.getAddress(), gateway);
         }
         return gatewayMap;
     }
     public   List<GatewayTree> getAllGateway(GatewayMapper gatewayMapper, String user_key, String project_key,String config_key) {
+        println("执行333一次获取全部数据");
         QueryWrapper<Gateway> queryWrapper = Wrappers.query();
         queryWrapper.eq("user_key",user_key);
         queryWrapper.eq("project_key",project_key);
@@ -183,6 +239,7 @@ public class Gateway_sql {
     }
 
     public   List<Gateway> getAllGateways(GatewayMapper gatewayMapper, String user_key, String project_key,String config_key) {
+        println("执行44一次获取全部数据");
         QueryWrapper<Gateway> queryWrapper = Wrappers.query();
         queryWrapper.eq("user_key",user_key);
         queryWrapper.eq("project_key",project_key);
@@ -236,9 +293,11 @@ public class Gateway_sql {
         return only;
     }
     public PageGateway selectPageGateway(GatewayMapper gatewayMapper, int page, int limt, String quickSearch, String userKey,String project_key) {
+       // println("执行55一次获取全部数据"+page+"  "+limt);
         LambdaQueryWrapper<Gateway> userLambdaQueryWrapper = Wrappers.lambdaQuery();
         Page<Gateway> userPage = new Page<>(page, limt);
         IPage<Gateway> userIPage;
+        //println("user_key="+userKey+" project_key="+project_key);
         userLambdaQueryWrapper.eq(Gateway::getUser_key, userKey).eq(Gateway::getProject_key,project_key).like(Gateway::getAddress, quickSearch).or().eq(Gateway::getUser_key, userKey).eq(Gateway::getProject_key,project_key).like(Gateway::getName,quickSearch);
 
        /* if (project_name != null && project_name.length() > 0) {
@@ -254,8 +313,8 @@ public class Gateway_sql {
             }
         }*/
         userIPage = gatewayMapper.selectPage(userPage, userLambdaQueryWrapper);
-        //    System.out.println("总页数： "+userIPage.getPages());
-        //System.out.println("总记录数： "+userIPage.getTotal());
+        //    println("总页数： "+userIPage.getPages());
+        //println("总记录数： "+userIPage.getTotal());
         // userIPage.getRecords().forEach(System.out::println);
         PageGateway pageGateway = new PageGateway(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageGateway;

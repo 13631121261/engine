@@ -13,12 +13,20 @@ import com.kunlun.firmwaresystem.mappers.HistoryMapper;
 
 import java.util.List;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Alarm_Sql {
     public boolean addAlarm(AlarmMapper alarmMapper, Alarm alarm) {
         alarmMapper.insert(alarm);
             return true;
     }
+    public void deleteBy15Day(AlarmMapper alarmMapper, long time){
+        QueryWrapper<Alarm> queryWrapper = Wrappers.query();
+        queryWrapper.le("create_time",time);
+       // println("时间");
+        alarmMapper.delete(queryWrapper);
 
+    }
     public PageAlarm selectPageAlarm(AlarmMapper alarmMapper, int page, int limt, String project_key,String object,String alarm_type,String name) {
 
         LambdaQueryWrapper<Alarm> userLambdaQueryWrapper = Wrappers.lambdaQuery();
@@ -26,17 +34,27 @@ public class Alarm_Sql {
         IPage<Alarm> userIPage;
 
         if(alarm_type!=null&&!alarm_type.equals("sos_all")){
-            userLambdaQueryWrapper.like(Alarm::getAlarm_type, alarm_type).like(Alarm::getAlarm_object, object).like(Alarm::getSn, name).eq(Alarm::getProject_key,project_key)
-            .or().like(Alarm::getAlarm_type, alarm_type).like(Alarm::getAlarm_object, object).like(Alarm::getName, name).eq(Alarm::getProject_key,project_key);
+          //  println("这里执行66666");
+            userLambdaQueryWrapper.like(Alarm::getAlarm_type, alarm_type).like(Alarm::getAlarm_object, object).like(Alarm::getSn, name).eq(Alarm::getProject_key,project_key).orderByDesc(true,Alarm::getId)
+                             .or().like(Alarm::getAlarm_type, alarm_type).like(Alarm::getAlarm_object, object).like(Alarm::getName, name).eq(Alarm::getProject_key,project_key).orderByDesc(true,Alarm::getId);
         }else{
-            userLambdaQueryWrapper.like(Alarm::getAlarm_object, object).like(Alarm::getSn, name).eq(Alarm::getProject_key,project_key)
-            .or().like(Alarm::getAlarm_object, object).like(Alarm::getName, name).eq(Alarm::getProject_key,project_key);
+            println("这里执行");
+            userLambdaQueryWrapper.like(Alarm::getAlarm_object, object).like(Alarm::getSn, name).eq(Alarm::getProject_key,project_key).orderByDesc(true,Alarm::getId)
+            .or().like(Alarm::getAlarm_object, object).like(Alarm::getName, name).eq(Alarm::getProject_key,project_key).orderByDesc(true,Alarm::getId);
         }
       /*  userLambdaQueryWrapper.eq(Alarm::getProject_key, project_key).like(Alarm::getAlarm_object, object).like(Alarm::getAlarm_type, alarm_type).like(Alarm::getSn, name)
                 .or().eq(Alarm::getProject_key, project_key).like(Alarm::getAlarm_object, object).like(Alarm::getAlarm_type, alarm_type).like(Alarm::getName, name);
          */ userIPage = alarmMapper.selectPage(userPage, userLambdaQueryWrapper);
         PageAlarm pageAlarm = new PageAlarm(userIPage.getRecords(), userIPage.getPages(), userIPage.getTotal());
         return pageAlarm;
+    }
+
+    public List<Alarm> selectByOneDay(AlarmMapper alarmMapper,String project_key,long time){
+        LambdaQueryWrapper<Alarm> userLambdaQueryWrapper = Wrappers.lambdaQuery();
+        userLambdaQueryWrapper.eq(Alarm::getProject_key, project_key).ge(Alarm::getCreate_time,time).orderByDesc(true,Alarm::getId);
+        List<Alarm> alarms=alarmMapper.selectList(userLambdaQueryWrapper);
+        return alarms;
+
     }
     public  void deletes(List<Integer> ids){
 

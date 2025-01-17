@@ -1,0 +1,66 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: qaz741
+    url: jdbc:mysql://mysql:3306/engine?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true
+  mvc:
+   hiddenmethod:
+    filter:
+      enabled: true
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+  redis:
+    host: redis
+    port: 6379
+    jedis:
+      pool:
+        max-active: 100
+        max-idle: 20
+        min-idle: 0
+        max-wait: 30000
+    timeout: 3000
+
+  jackson:
+    #日期格式化
+    date-format: yyyy-MM-dd HH:mm:ss
+    serialization:
+      #格式化输出
+      indent_output: true
+      #忽略无法转换的对象
+      fail_on_empty_beans: false
+    #设置空如何序列化
+    defaultPropertyInclusion: NON_EMPTY
+    deserialization:
+      #允许对象忽略json中不存在的属性
+      fail_on_unknown_properties: false
+    parser:
+      #允许出现特殊字符和转义符
+      allow_unquoted_control_chars: true
+      #允许出现单引号
+      allow_single_quotes: true
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+mybatis-plus:
+  global-config:
+    db-config:
+      table-underline: false
+  configuration:
+    map-underscore-to-camel-case: false
+    log-impl:  org.apache.ibatis.logging.nologging.NoLoggingImpl
+server:
+  port: 7001
+netty:
+  tcp:
+    client:
+      port: 702
+
+
+log-impl: org.apache.ibatis.logging.stdout.StdOutImpl /org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+

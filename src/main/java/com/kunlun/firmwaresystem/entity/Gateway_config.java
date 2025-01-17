@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Gateway_config implements Serializable{
     int id;
     String name;
@@ -252,7 +254,7 @@ public class Gateway_config implements Serializable{
     }
 
     public void setSub_topic(String sub_topic) {
-        System.out.println("设置订阅主题="+sub_topic);
+        println("设置订阅主题="+sub_topic);
         this.sub_topic = sub_topic;
     }
 
@@ -261,7 +263,7 @@ public class Gateway_config implements Serializable{
     }
 
     public void setPub_topic(String pub_topic) {
-        System.out.println("设置发布主题="+pub_topic);
+        println("设置发布主题="+pub_topic);
         this.pub_topic = pub_topic;
     }
 
@@ -395,12 +397,17 @@ public class Gateway_config implements Serializable{
     }
 
     public String[] getFilter_mac() {
-        this.filter_macs=filter_mac[0]+"-"+filter_mac[1];
+        if(filter_mac[0]!=null&&filter_mac[1]!=null){
+            this.filter_macs=filter_mac[0].toLowerCase()+"-"+filter_mac[1].toLowerCase();
+        }else{
+            this.filter_macs=filter_mac[0]+"-"+filter_mac[1];
+        }
+
         return filter_mac;
     }
 
     public void setFilter_uuid(String[] filter_uuid) {
-        System.out.println("运行这里");
+        println("运行这里");
         this.filter_uuid = filter_uuid;
         if(filter_uuid!=null&&filter_uuid.length>0){
             this.filter_uuids=toString(filter_uuid);
@@ -416,7 +423,7 @@ public class Gateway_config implements Serializable{
 
 
     public void setFilter_companyid(String[] filter_companyid) {
-        System.out.println("运行123");
+        println("运行123");
         this.filter_companyid=filter_companyid;
         if(filter_companyid!=null&&filter_companyid.length>0){
             this.filter_companyids=toString(filter_companyid);
@@ -483,7 +490,7 @@ public class Gateway_config implements Serializable{
 
 
     private String toString(String[] a){
-        System.out.println("执行这里了"+a.toString());
+        println("执行这里了"+a.toString());
         String b="";
         int i=0;
         if(a!=null&&a.length>0){
@@ -502,7 +509,7 @@ public class Gateway_config implements Serializable{
         return b;
     }
     private String[] toStringArray(String a,int len){
-        System.out.println("执行这里"+a);
+        println("执行这里"+a);
         if(a!=null){
             a=a.replaceAll("null","");
 

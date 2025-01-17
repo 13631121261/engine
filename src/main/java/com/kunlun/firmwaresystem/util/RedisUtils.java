@@ -34,6 +34,7 @@ public class RedisUtils {
     public boolean expire(String key, long time) {
         try {
             if (time > 0) {
+
                 redisTemplate.expire(key, time, TimeUnit.SECONDS);
             }
             return true;
@@ -43,6 +44,21 @@ public class RedisUtils {
         }
     }
 
+
+
+
+    public boolean deleteAll(){
+        boolean status=false;
+      Set<String> keys= redisTemplate.keys("*");
+      for(String key:keys){
+          status=redisTemplate.delete(key);
+          if(!status){
+              return false;
+          }
+      }
+        return status;
+
+    }
     /**
      * 根据key 获取过期时间
      *
@@ -128,6 +144,16 @@ public class RedisUtils {
         try {
             //redisTemplate.opsForValue().set(key, value);
             redisTemplate.opsForValue().set(key, value, 120, TimeUnit.SECONDS);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public boolean set6000(String key, Object value) {
+        try {
+            //redisTemplate.opsForValue().set(key, value);
+            redisTemplate.opsForValue().set(key, value, 600, TimeUnit.SECONDS);
             return true;
         } catch (Exception e) {
             e.printStackTrace();

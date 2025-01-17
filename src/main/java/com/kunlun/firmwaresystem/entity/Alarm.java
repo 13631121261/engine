@@ -13,21 +13,31 @@ public class Alarm {
     String name;
     String sn;
     String project_key;
+    long last_time;
     public Alarm(){
 
     }
-    public Alarm( Alarm_Type alarm_type,
-                  Alarm_object alarm_object,
 
-            String map_key,
-            int fence_id,
-            String fence_name,
-            double bt,
-            int area_id,
-            String area_name,
-            String name,
-            String sn,
-            String project_key){
+    public void setLast_time(long last_time) {
+        this.last_time = last_time;
+    }
+
+    public long getLast_time() {
+        return last_time;
+    }
+
+    public Alarm(Alarm_Type alarm_type,
+                 Alarm_object alarm_object,
+
+                 String map_key,
+                 int fence_id,
+                 String fence_name,
+                 double bt,
+                 int area_id,
+                 String area_name,
+                 String name,
+                 String sn,
+                 String project_key, long time){
     this.alarm_object=alarm_object;
     this.alarm_type=alarm_type;
     this.area_id=area_id;
@@ -37,6 +47,10 @@ public class Alarm {
     this.fence_name=fence_name;
     this.bt=bt;
     this.map_key=map_key;
+    if(time<=0){
+        time=System.currentTimeMillis()/1000;
+    }
+    this.last_time=time;
     this.create_time=System.currentTimeMillis()/1000;
     this.name=name;
     this.project_key=project_key;

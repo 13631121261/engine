@@ -1,22 +1,16 @@
 package com.kunlun.firmwaresystem.sql;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.kunlun.firmwaresystem.device.PageArea;
-import com.kunlun.firmwaresystem.entity.Area;
-import com.kunlun.firmwaresystem.entity.Menu;
 import com.kunlun.firmwaresystem.entity.Menu_en;
-import com.kunlun.firmwaresystem.mappers.AreaMapper;
 import com.kunlun.firmwaresystem.mappers.MenuEn_Mapper;
-import com.kunlun.firmwaresystem.mappers.MenuMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
 
 public  class MenuEn_Sql {
     public boolean addArea(MenuEn_Mapper menuMapper, Menu_en menu) {
@@ -28,7 +22,7 @@ public  class MenuEn_Sql {
                 /*  QueryWrapper<Area> queryWrapper = Wrappers.query();
               queryWrapper.eq("name",area.getName());
                 Area area1=areaMapper.selectOne(queryWrapper);
-                System.out.println("申请的ID="+area1.getId());
+                println("申请的ID="+area1.getId());
                 area.setId(area1.getId())*/;
         return true;
         //}
@@ -91,7 +85,7 @@ public  class MenuEn_Sql {
             }*/
             return departmentList;
         }catch (Exception e){
-            System.out.println("异常="+e);
+            println("异常="+e);
             return null;
         }
 
@@ -101,7 +95,7 @@ public  class MenuEn_Sql {
         QueryWrapper<Menu_en> queryWrapper = Wrappers.query();
         queryWrapper.eq("shows",0);
         List<Menu_en> menus= menuMapper.selectList(queryWrapper);
-            System.out.println("长度="+menus.size());
+            println("长度="+menus.size());
         List<Menu_en> departmentList=new ArrayList<>();
         Map<Integer,Menu_en> menuHashMap=new HashMap<>();
         for(int i=0;i<menus.size();i++){
@@ -121,7 +115,7 @@ public  class MenuEn_Sql {
             }*/
         return departmentList;}
         catch (Exception e){
-            System.out.println("异常="+e);
+            println("异常="+e);
             return null;
         }
 

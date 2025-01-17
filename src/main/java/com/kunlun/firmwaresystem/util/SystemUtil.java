@@ -1,7 +1,7 @@
 package com.kunlun.firmwaresystem.util;
 
 import com.kunlun.firmwaresystem.device.Device;
-import com.kunlun.firmwaresystem.entity.device.Devicep;
+import com.kunlun.firmwaresystem.entity.Beacon;
 import com.kunlun.firmwaresystem.gatewayJson.Constant;
 import com.kunlun.firmwaresystem.interface_.iConnectTimeOut;
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -9,6 +9,7 @@ import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
+
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,6 +17,7 @@ import java.io.*;
 import java.util.*;
 
 import static com.kunlun.firmwaresystem.NewSystemApplication.customerMap;
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
 import static java.lang.Thread.sleep;
 
 public class SystemUtil {
@@ -57,28 +59,25 @@ public class SystemUtil {
 
     public void addConnectDevice(Device device, iConnectTimeOut connectTimeOut) {
         redisUtils.set(device.getdAddress(), device);
-        System.out.println("12112221" + device.getState());
+        println("12112221" + device.getState());
         //deviceList.add(device);
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    System.out.println("委曲求全群群群群群群");
-                    System.out.println("*******" + device.getdAddress());
+                    println("委曲求全群群群群群群");
+                    println("*******" + device.getdAddress());
                     sleep(device.getTimeout());
-                    System.out.println("*******" + device.getdAddress());
+                    println("*******" + device.getdAddress());
                     Device device1 = (Device) redisUtils.get(device.getdAddress());
-                    System.out.println("/////");
-                    System.out.println("判断" + device1.getState());
+                    println("/////");
+                    println("判断" + device1.getState());
                     String state = (String) redisUtils.get(Constant.ConnectState + device.getdAddress());
                     device.setState(state);
-                    //说明最新的缓存状态还是刚开始的下发状态，网关并没有上报最新的状态
-
-                    // System.out.println("超时无动作");
                     connectTimeOut.timeout(device);
                     //  }
                 } catch (Exception e) {
-                    System.out.println("异常---=" + e.getMessage());
+                    println("异常---=" + e.getMessage());
                 }
             }
         }).start();
@@ -98,21 +97,20 @@ public class SystemUtil {
         int i = 1;
         for (Map<String, String> map : mapList) {
             row = sheet.createRow(i);
+            int j = 0;
             for (String column : map.keySet()) {
-                int j = 0;
                 cell = row.createCell(j);
                 cell.setCellValue(map.get(column));
                 j++;
             }
             i++;
-
         }
         try {
             FileOutputStream stream = new FileOutputStream(file);
             workbook.write(stream);
             stream.close();
         }catch (Exception e){
-            System.out.println("文件异常="+e.getMessage());
+            println("文件异常="+e.getMessage());
         }
         }
 
@@ -128,18 +126,31 @@ public class SystemUtil {
         if (file == null) {
             return null;
         }
-        System.out.println("地址=" + file.getOriginalFilename());
+        println("地址=" + file.getOriginalFilename());
         InputStream is = null;
         try {
-            is = file.getInputStream();
-            if (file.getOriginalFilename().contains("xls")) {
+            println("1111");
+            is =file.getInputStream();
+            println("12222"+is.available());
+            if (file.getOriginalFilename().contains("xlsx")) {
+                println("类型在此5");
+                try {
+                    println("类型在8"+is);
+                    wb = new XSSFWorkbook(is);
+                    println("类型在此66"+wb);
+                }catch (IOException e){
+                    println("大大的异常="+e.toString());
+                }
+
+            } else if (file.getOriginalFilename().contains("xls")) {
+
                 wb = new HSSFWorkbook(is);
-            } else if (file.getOriginalFilename().contains("xlsx")) {
-                wb = new XSSFWorkbook(is);
+
             } else {
                 wb = null;
             }
             if (wb != null) {
+                println("65656");
                 // 用来存放表中数据
                 list = new ArrayList<HashMap<String, String>>();
                 // 获取第一个sheet
@@ -147,6 +158,7 @@ public class SystemUtil {
 
                 // 获取最大行数
                 int rownum = sheet.getPhysicalNumberOfRows();
+                println("输出行数="+rownum);
                 // 获取第一行
                 rowHeader = sheet.getRow(0);
                 row = sheet.getRow(0);
@@ -159,15 +171,15 @@ public class SystemUtil {
                     HashMap<String, String> map = new LinkedHashMap<String, String>();
                     row = sheet.getRow(i);
                     if (row != null) {
-                        for (int j = 0; j < colnum; j++) {
-                            System.out.println("J=" + j);
+                        for (int j = 0; j < columns.length; j++) {
+                            println("J=" + j);
                             if (columns[j].equals(getCellFormatValue(rowHeader.getCell(j)))) {
                                 cellData = (String) getCellFormatValue(row
                                         .getCell(j));
-                                System.out.println("读取=" + cellData + "J=" + j);
+                                println("读取=" + cellData + "J=" + j);
                                 map.put(columns[j], cellData.replaceAll(" ", ""));
                                 /*DecimalFormat df = new DecimalFormat("#");
-                                System.out.println(    df.format(cellData));*/
+                                println(    df.format(cellData));*/
                                 // Logs.e("yy","cellData="+cellData);
                                 //Logs.e("yy","map="+map);
                             }
@@ -177,12 +189,17 @@ public class SystemUtil {
                     }
                     list.add(map);
                 }
+            }else{
+                println("7878");
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+
+            println("异常"+e.getMessage());
             return null;
         } catch (IOException e) {
-            e.printStackTrace();
+            println("异常22="+e.getMessage());
+
+
             return null;
         }
         return list;
@@ -230,74 +247,47 @@ public class SystemUtil {
 
 
 
-public static  void  createExcelTwo(String path , String[] title, Map<String, Devicep> map_list) {
-    HSSFWorkbook workbook =new  HSSFWorkbook();
-    HSSFSheet sheet = workbook.createSheet();
-    HSSFRow row=null;
-    row = sheet.createRow(0);
-    HSSFCell cell= null;
-    int i=0;
-    for(String t:title){
-        cell=row.createCell(i);
-        cell.setCellValue(t);
-        i++;
-    }
-    i=1;
-    Devicep deviceP;
-    for(String sn:map_list.keySet()){
-        deviceP=map_list.get(sn);
-        row=sheet.createRow(i);
-        i++;
-        cell=row.createCell(0);
-        cell.setCellValue(deviceP.getName());
-        cell=row.createCell(1);
-        cell.setCellValue(deviceP.getSn());
-        cell=row.createCell(2);
-        if(deviceP.getIsbind()==1){
-            cell.setCellValue("已绑定信标");
-        }else{
-            cell.setCellValue("未绑定信标");
+    public static  void  createExcelBeacon(String path , String[] title,    List<Beacon> beaconList) {
+        HSSFWorkbook workbook =new  HSSFWorkbook();
+        HSSFSheet sheet = workbook.createSheet();
+        HSSFRow row=null;
+        row = sheet.createRow(0);
+        HSSFCell cell= null;
+        int i=0;
+        for(String t:title){
+            cell=row.createCell(i);
+            cell.setCellValue(t);
+            i++;
         }
-        cell=row.createCell(3);
-        cell.setCellValue(deviceP.getBind_mac());
-        cell=row.createCell(4);
-        cell.setCellValue(customerMap.get(deviceP.getCustomer_key()).getNickname());
-        cell=row.createCell(5);
-        cell.setCellValue(deviceP.getType_name());
-        cell=row.createCell(6);
-        if(deviceP.getSos()==1){
-            cell.setCellValue("触发报警");
-        }else{
-            cell.setCellValue("正常");
-        }
-        cell=row.createCell(7);
-        if(deviceP.getOnline()==1){
-            cell.setCellValue("在线");
-        }else {
-            cell.setCellValue("离线");
-        }
-        cell=row.createCell(8);
-        cell.setCellValue(deviceP.getLasttime());
-        cell=row.createCell(9);
-        cell.setCellValue(deviceP.getPoint_name());
-        cell=row.createCell(10);
-        cell.setCellValue(deviceP.getRssi());
-        cell=row.createCell(11);
-        cell.setCellValue(deviceP.getGateway_mac());
-        cell=row.createCell(12);
-        cell.setCellValue(deviceP.getBt()+"V");
-        cell=row.createCell(13);
-        cell.setCellValue(deviceP.getCreatetime());
-    }
-    File file = new File(path);
-    try{
-        file.createNewFile();
-        FileOutputStream stream = new FileOutputStream(file);
-        workbook.write(stream);
-        stream.close();
-    }catch (IOException e){
-        System.out.println("盘点记录文件保存异常"+e.getMessage());
-    }
+        i=1;
 
-}
+        for(Beacon beacon :beaconList){
+        //  String[] titles = {"MAC", "在线状态", "绑定状态", "资产编码/身份证","资产/人员", "电压", "创建时间", "在线时间"};
+            row=sheet.createRow(i);
+            i++;
+            cell=row.createCell(0);
+            cell.setCellValue(beacon.getMac());
+
+            cell=row.createCell(1);
+            cell.setCellValue(beacon.getOnline()==1?"OnLine":"OffLine");
+            cell=row.createCell(5);
+            cell.setCellValue(beacon.getBt());
+
+            cell=row.createCell(6);
+            cell.setCellValue(beacon.getCreatetime());
+
+            cell=row.createCell(7);
+            cell.setCellValue(beacon.getLastTime());
+        }
+        File file = new File(path);
+        try{
+            file.createNewFile();
+            FileOutputStream stream = new FileOutputStream(file);
+            workbook.write(stream);
+            stream.close();
+        }catch (IOException e){
+            println("盘点记录文件保存异常"+e.getMessage());
+        }
+
+    }
 }
