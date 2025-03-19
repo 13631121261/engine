@@ -9,11 +9,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>andesen</groupId>
-    <artifactId>KunLun_System</artifactId>
+    <artifactId>KunLun_System_engine</artifactId>
 
 
-    <version>2024.11.27</version>
-    <name>KunLun_System</name>
+    <version>2025-3-18</version>
+    <name>engine</name>
     <description>Demo gatewayConfig for Spring Boot</description>
     <properties>
         <java.version>1.8</java.version>
@@ -95,8 +95,8 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.paho</groupId>
-            <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-            <version>1.2.5</version>
+            <artifactId>org.eclipse.paho.mqttv5.client</artifactId>
+            <version>1.2.5</version> <!-- 使用最新版本 -->
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

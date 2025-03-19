@@ -74,13 +74,13 @@ public class MyWebSocketTag extends WebSocketServer {
     public void onStart() {      println("正常启动");
     }
     public void sendData(String map_key, String msg) {
-    //   println("触发发送"+key);
+       println("触发发送"+map_key);
         for(String key:keys){
             if(key.contains(map_key)){
                 WebSocket webSocket = connectlist.get(key);
                 if (webSocket != null && webSocket.isOpen()) {
                     webSocket.send(msg);
-                //    println("位置推送到网页");
+                    println("位置推送到网页");
                 }
             }
         }

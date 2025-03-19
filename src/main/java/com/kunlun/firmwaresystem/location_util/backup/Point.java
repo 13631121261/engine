@@ -2,6 +2,8 @@ package com.kunlun.firmwaresystem.location_util.backup;
 
 import java.util.ArrayList;
 
+import static com.kunlun.firmwaresystem.NewSystemApplication.println;
+
 public class Point {
     public String mac;
     String map_key;
@@ -14,7 +16,7 @@ public class Point {
         this.y = y;
         this.mac = mac;
         this.map_key=map_key;
-      //  println("点 X="+x+ " Y="+y);
+       // println("点 X="+x+ " Y="+y);
     }
 
     public void setD(double d) {

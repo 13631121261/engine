@@ -1,13 +1,16 @@
 package com.kunlun.firmwaresystem.Tcp;
 
 
+import com.kunlun.firmwaresystem.NewSystemApplication;
 import com.kunlun.firmwaresystem.entity.Beacon_tag;
 import com.kunlun.firmwaresystem.entity.FWordcard;
+import com.kunlun.firmwaresystem.entity.Tag_log;
 import com.kunlun.firmwaresystem.gatewayJson.Constant;
 import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
 import com.kunlun.firmwaresystem.mappers.FWordcardMapper;
 import com.kunlun.firmwaresystem.sql.Btag_Sql;
 import com.kunlun.firmwaresystem.sql.FWordcard_Sql;
+import com.kunlun.firmwaresystem.sql.TagLogSql;
 import com.kunlun.firmwaresystem.util.RedisUtils;
 import com.kunlun.firmwaresystem.util.StringUtil;
 import io.netty.channel.ChannelHandler;
@@ -85,6 +88,7 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
         try{
           //  println("接收数据="+StringUtil.byteArrToHex((byte[])msg));
             raw= StringUtil.byteArrToHex((byte[])msg);
+            System.out.println("工卡上报数据="+raw);
         }catch (Exception e){
             println("异常="+e.getMessage());
 
@@ -149,7 +153,24 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                          println("刚才是蓝牙定位包的数据");
                         println("类型="+data[5]);
                         println("信标组数量是="+data[6]);
-                        int d=6;
+                        int d=6;                          //  BDBDBDBD280367F3DCFF04C4E3BAC30281
+                                                          //  bdbdbdbd280367d3dcbd04c4e3bac3 02 e5
+                        String msg1="你好，支付宝到账0.1元，请注意查收，收到了，我明天就取出来。我可以告诉你，这是一个非常不明确的事情";
+                        byte[] ds=   msg1.getBytes("GB2312");
+                        String dd="";
+                        if (ds.length<10){
+                            println("sssssssssss");
+
+                             dd="BDBDBDBD280367D3DCBD0"+ds.length+StringUtil.byteArrToHex(ds)+"01E5";
+                        }else {
+                            println("dddddddddd");
+                             dd = "BDBDBDBD280367D3DCBD" + Integer.toHexString(ds.length) + StringUtil.byteArrToHex(ds) + "02E5";
+                        }
+                      //  cmd=StringUtil.hexToByteArr(  "BDBDBDBD280367D3DCBD 04C4E3BAC303E5");
+                        cmd=StringUtil.hexToByteArr(  dd);
+                        byte crc1=getCRC(cmd);
+                        cmd[cmd.length-1]=crc1;
+                    //    System.out.println("///"+StringUtil.byteArrToHex(cmd));
 
                         for(int i=1;i<=data[6];i++){
                             byte[] time1=new byte[4];
@@ -183,6 +204,20 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                                    Gateway_device gatewayDevice=new Gateway_device(major+":"+minor,a,rssi,beaconTag.getX(),beaconTag.getY(),System.currentTimeMillis()/1000,beaconTag.getMap_key(),-51,2.67,0,1);
                                    beaconTags.add(gatewayDevice);
                                    ///println("熟组="+beaconTags);
+                                   Tag_log tagLog=new Tag_log();
+                                   tagLog.setBeacon_address(im);
+                                   tagLog.setGateway_address(major+":"+minor);
+                                   tagLog.setCreate_time(System.currentTimeMillis()/1000);
+                                   tagLog.setProject_key(fWordcard.getProject_key());
+                                   tagLog.setKeys1(fWordcard.getSos());
+                                //   tagLog.setRun(fWordcard.getRun());
+                                   tagLog.setBt(fWordcard.getBt()+"");
+                                   tagLog.setGateway_name(beaconTag.getName());
+                                   tagLog.setRssi(rssi);
+                                   tagLog.setType("");
+                                   //  println("log="+tagLog);
+                                   TagLogSql tagLogSql=new TagLogSql();
+                                   tagLogSql.addLog(NewSystemApplication.tagLogMapper,tagLog);
                                }
 
                             }
@@ -198,15 +233,30 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                             }
 
                         }
+                    //    channelHandlerContext.writeAndFlush(cmd).syncUninterruptibly();
                         break;
                     case 0xF6:
                         println("88888888888888888 88888888888888888电量="+data[5]);
                         if(fWordcard==null){
                             return;
                         }
-
-                        fWordcard.setBt(data[5]);
+                        switch (data[5]){
+                            case 0:
+                                fWordcard.setBt(10);
+                            break;
+                            case 1:
+                                fWordcard.setBt(30);
+                                break;
+                            case 2:
+                                fWordcard.setBt(60);
+                                break;
+                            case 3:
+                                fWordcard.setBt(100);
+                                break;
+                        }
+                     //   fWordcard.setBt(data[5]);
                         println("信号强度="+data[11]);
+                        redisUtil.setnoTimeOut(Constant.fwordcard+im,fWordcard);
                         channelHandlerContext.writeAndFlush(new byte[]{0x01,0x02}).syncUninterruptibly();
                         break;
                     case 0x02:
@@ -215,6 +265,11 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                             if(fWordcard!=null){
                                 fWordcard.setSos(1);
                             }
+                            cmd=StringUtil.hexToByteArr("BDBDBDBD2803030E0F080304C4CEBAC302DD");
+                            byte crc2=getCRC(cmd);
+                            cmd[cmd.length-1]=crc2;
+                            System.out.println(StringUtil.byteArrToHex(cmd));
+                            channelHandlerContext.writeAndFlush(cmd).syncUninterruptibly();
                             println("SOS按键报警"+fWordcard);
                         }else if(data[5]==0x04){
                             if(fWordcard!=null){
@@ -226,6 +281,8 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                             if(fWordcard!=null){
                                 fWordcard.setSos(0);
                             }
+                            cmd=StringUtil.hexToByteArr("BDBDBDBD2803030E0F080304C4CEBAC302DD");
+                            channelHandlerContext.writeAndFlush(cmd).syncUninterruptibly();
                             println("SOS取消报警"+fWordcard);
                         }else{
                             println("其他报警");

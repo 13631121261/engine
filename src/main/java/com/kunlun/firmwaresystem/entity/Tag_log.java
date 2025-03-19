@@ -3,7 +3,7 @@ package com.kunlun.firmwaresystem.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 
 public class Tag_log {
-   int  id;
+   long  id;
    String type;
    String       beacon_address;
    String gateway_address;
@@ -23,7 +23,7 @@ public class Tag_log {
         return type;
     }
 
-    public int getId() {
+    public long getId() {
         return id;
     }
 

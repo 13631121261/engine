@@ -23,6 +23,7 @@ import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ public class NewSystemApplication {
     public static final String url="http://172.17.73.62:808/download";*/
 
 
-
+    public static MyMqttClient  client;
     //信号在1米时的值暂定为-51；
     public static int rssi_At_1m = -47;
     public static double N=2.67;
@@ -81,8 +82,8 @@ public class NewSystemApplication {
     public static Map<String, Beacon> beaconsMap;
 
     public static Map<String, Bracelet> braceletsMap;
-    public static Map<String, MyMqttClient> myMqttClientMap;
-    public static Map<String, TMyMqttClient> t_myMqttClientMap;
+ //   public static Map<String, MyMqttClient> myMqttClientMap;
+   // public static Map<String, TMyMqttClient> t_myMqttClientMap;
     public static Map<String, Wordcard_a> wordcard_aMap;
     public static Map<String, FWordcard> fWordcardMap;
     public static Map<String, Customer> customerMap;
@@ -136,7 +137,7 @@ public class NewSystemApplication {
         NewSystemApplication.userMapper = userMapper;
         NewSystemApplication.bTagMapper = bTagMapper;
         NewSystemApplication.logsMapper=logsMapper;
-        Integer.parseInt()
+
         NewSystemApplication.checkSheetMapper=checkSheetMapper;
         NewSystemApplication.checkRecordMapper=checkRecordMapper;
         NewSystemApplication.customerMapper=customerMapper;
@@ -234,43 +235,55 @@ public class NewSystemApplication {
         check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
 
 
-        Map_Sql map_sql=new Map_Sql();
-        map_sql.getAllMap(mapMapper,redisUtil);
 
+        //println("有链接="+value.getR_host());
+        //    t_myMqttClientMap.put(key,t_client);
       new Thread(new Runnable() {
           @Override
           public void run() {
-              myMqttClientMap=new HashMap<>();
-              t_myMqttClientMap=new HashMap<>();
-              MyMqttClient client =null;/*= new MyMqttClient("120.77.232.76",1883,"GwData,Gwdata5","SrvData",1,"kunlun_server","","KunLun");
+              Map_Sql map_sql=new Map_Sql();
+              map_sql.getAllMap(mapMapper,redisUtil);
+              client = new MyMqttClient("120.77.232.76",1883,"asd","location_engine",0,"","","");
+              client.start();
+           //   myMqttClientMap=new HashMap<>();
+         //     t_myMqttClientMap=new HashMap<>();
+          /*= new MyMqttClient("120.77.232.76",1883,"GwData,Gwdata5","SrvData",1,"kunlun_server","","KunLun");
               MyMqttClient t_client=null;
               client.start();
               myMqttClientMap.put("allmqtt",client);*/
-              TMyMqttClient t_client=null;
-              for (Map.Entry<String, Check_sheet> entry : check_sheetMap.entrySet()) {
+
+              /*for (Map.Entry<String, Check_sheet> entry : check_sheetMap.entrySet()) {
                   String key = entry.getKey();
                   Check_sheet value = entry.getValue();
-
-
-                  if(value!=null&&value.getRelay_type()==1&& !value.getR_host().isEmpty()&&!value.getR_host().equals("None")&&value.getR_port()>0){
+                  println("循环"+value.toString());
+                 if(value!=null&&value.getRelay_type()==1&& !value.getR_host().isEmpty()&&!value.getR_host().equals("None")&&value.getR_port()>0){
                       println("有链接="+value.getR_host());
-                      t_client = new TMyMqttClient(value.getR_host(),value.getR_port(),value.getR_sub(),value.getR_pub(),value.getR_qos(),value.getR_user(),value.getR_password(),value.getProject_key());
-                      t_client.start();
-                      t_myMqttClientMap.put(key,t_client);
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            TMyMqttClient t_client=null;
+                            t_client = new TMyMqttClient(value.getR_host(),value.getR_port(),value.getR_sub(),value.getR_pub(),value.getR_qos(),value.getR_user(),value.getR_password(),value.getProject_key());
+                            t_client.start();
+                            println("有链接="+value.getR_host());
+                            t_myMqttClientMap.put(key,t_client);
+                        }
+                    }).start();
+
                   }
+                *//*  if(value!=null&& !value.getHost().isEmpty()&&!value.getHost().equals("None")){
 
-                  if(value!=null&& !value.getHost().isEmpty()&&!value.getHost().equals("None")){
-                 /*     if(value.getHost().contains("127.0.0.1")){
-                          continue;
-                      }*/
-                       client = new MyMqttClient(value.getHost(),value.getPort(),value.getSub(),value.getPub(),value.getQos(),value.getUser(),value.getPassword(),value.getProject_key());
-                      client.start();
-                      myMqttClientMap.put(key,client);
-                  }
+                      new Thread(new Runnable() {
+                          @Override
+                          public void run() {
+                              MyMqttClient client =null;
+                              client = new MyMqttClient(value.getHost(),value.getPort(),value.getSub(),value.getPub(),value.getQos(),value.getUser(),value.getPassword(),value.getProject_key());
+                              client.start();
+                              myMqttClientMap.put(key,client);
+                          }
+                      }).start();
 
-
-
-              }
+                  }*//*
+              }*/
           }
       }).start();
 
@@ -302,6 +315,6 @@ public class NewSystemApplication {
         return registration;
     }
     public static void println(String log){
-        System.out.println("输出log----="+log);
+        System.out.println(new Date()+"输出log----="+log);
     }
 }

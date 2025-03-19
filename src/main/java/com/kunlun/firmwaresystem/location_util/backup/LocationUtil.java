@@ -24,7 +24,8 @@ public class LocationUtil {
         //把这个设备的被对应的网关扫描的信息取出
         List<Gateway_device> gateway_beacon;
         Gateway_device data;
-     //   println("dataList长度" + dataList.size());
+        println("信标="+dataList.get(0).dAddress);
+       println("dataList长度" + dataList.size());
         for (int i = 0; i < dataList.size(); i++) {
             data = dataList.get(i);
             String gmac = data.getgAddress();
@@ -37,7 +38,7 @@ public class LocationUtil {
                 gateway_beacon.add(data);
             }
         }
-         //     println("dataMap"+dataMap.size());
+              println("dataMap"+dataMap.size());
       /*  if(dataMap.size()<=2){
             if(dataMap.size()==2){
 
@@ -69,7 +70,7 @@ public class LocationUtil {
                     rssi = data.getRssi() + rssi;
                 }
               rssi = rssi / dataList.size();*/
-                //取最大心海
+                //取最大信号
                 rssi=-100;
                 for (Gateway_device data : dataList) {
                   if(data.getRssi()>rssi){
@@ -94,10 +95,13 @@ public class LocationUtil {
                         }
                     }
                     rssi=dataList.get(d).getRssi();*/
-                Gateway_device data = dataList.get(0);
-                //  println(dataList.get(0).getName()+ "信号=" + rssi);
-                data.setRssi(rssi);
-                list.add(data);
+                if (rssi>=-85) {
+                    Gateway_device data = dataList.get(0);
+                    //  println(dataList.get(0).getName()+ "信号=" + rssi);
+                    data.setRssi(rssi);
+                    list.add(data);
+                }
+
             }
         }
         //
@@ -109,7 +113,7 @@ public class LocationUtil {
             return p;
         }
         if(list.size()==2){
-            Point p = new Point((list.get(0).getX()+list.get(1).getX())/2, (list.get(1).getY()+list.get(1).getY())/2, list.get(0).getgAddress(),list.get(0).getMap_key());
+            Point p = new Point((list.get(0).getX()+list.get(1).getX())/2, (list.get(0).getY()+list.get(1).getY())/2, list.get(0).getgAddress(),list.get(0).getMap_key());
             p.setList(list);
             return p;
         }
@@ -136,7 +140,7 @@ public class LocationUtil {
                 }
             }
             for (int i = 0; i < list.size(); i++) {
-                //println("剩余="+list.get(i).getgAddress()+"  信号="+list.get(i).getRssi());
+                println("剩余="+list.get(i).getgAddress()+"  信号="+list.get(i).getRssi());
             }
             ArrayList<Gateway_device> list1 = new ArrayList<>();
             list1.add(list.get(0));

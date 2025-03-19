@@ -28,6 +28,22 @@ public class TagLogSql {
         tagLogMapper.delete(queryWrapper);
 
     }
+    public void keepLatest200Records(TagLogMapper tagLogMapper) {
+        // 1. 查询第 200 条记录的 id
+        LambdaQueryWrapper<Tag_log> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Tag_log::getId).last("LIMIT 1 OFFSET 199");
+
+        List<Tag_log> list = tagLogMapper.selectList(queryWrapper);
+        if (list.isEmpty()) return;
+
+        Long minId = list.get(0).getId();
+
+        // 2. 删除旧数据
+        LambdaQueryWrapper<Tag_log> deleteWrapper = new LambdaQueryWrapper<>();
+        deleteWrapper.lt(Tag_log::getId, minId);
+
+        tagLogMapper.delete(deleteWrapper);
+    }
     public PageTagLog selectPageLog(TagLogMapper tagLogMapper, int page, int limt, String address,String project_key) {
 
         LambdaQueryWrapper<Tag_log> userLambdaQueryWrapper = Wrappers.lambdaQuery();

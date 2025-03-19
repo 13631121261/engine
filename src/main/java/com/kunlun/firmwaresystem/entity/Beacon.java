@@ -23,6 +23,7 @@ public class Beacon extends Tag {
     @TableField(exist = false)
     double y=0;
 
+    int l_type;
 
     @TableField(exist = false)
     ArrayList<Gateway_device> gatewayDevices;
@@ -65,7 +66,13 @@ public class Beacon extends Tag {
         return useDatalist;
     }
 
+    public void setL_type(int l_type) {
+        this.l_type = l_type;
+    }
 
+    public int getL_type() {
+        return l_type;
+    }
 
     public void setX(double x) {
         this.x = x;

@@ -24,7 +24,7 @@ import com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report_data_i
 import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
 import com.kunlun.firmwaresystem.sql.*;
 import com.kunlun.firmwaresystem.util.StringUtil;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
 
 import java.awt.geom.Point2D;
 import java.lang.reflect.Type;
@@ -54,8 +54,13 @@ public class CallBackHandlers implements Runnable {
         this.topic = topic;
         tagLogSql=new TagLogSql();
     }
+    int a=0;
     @Override
     public void run() {
+      /*  if(a>=0){
+            return;
+        }*/
+
         // subscribe后得到的消息会执行到这里面
    //  println("接收消息主题:" + new String(message.getPayload()));
 
@@ -284,7 +289,7 @@ public class CallBackHandlers implements Runnable {
 
                 try {
 
-                    com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report scan_report = ((com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data>) object);
+                    com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data> scan_report = ((com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data>) object);
                     //  println("设备数量="+((Scan_report<Scan_report_data>) object).getData().getDev_infos().length);
                     //把每个设备保存它响应的10个网关记录，方便后续调用
                     saveRecord(gateway, scan_report);
@@ -433,13 +438,7 @@ public class CallBackHandlers implements Runnable {
             for (Scan_report_data_info device : devices) {
                 Beacon beacon=beaconsMap.get(device.getAddr());
                 Bracelet bracelet=braceletsMap.get(device.getAddr());
-              /*  if(device.getAddr().equals("f0c890022079")){
-                    println("收到这个设备=f0c890022079");
-                }*/
-                //信标不在系统内，跳过
-                if(beacon == null&&bracelet==null){
-                    continue;
-                }else if(beacon!=null){
+                if(beacon!=null){
                     beacon.setGateway_address(gateway.getAddress());
                     if(beacon.getOnline()!=1){
 
@@ -462,19 +461,31 @@ public class CallBackHandlers implements Runnable {
                                 byte[] btdata = StringUtil.hexToByteArr(device.getSrp_raw());
                                 if(btdata.length >0){
                                     int bt=(btdata[4]&0xff)*256+(btdata[5]&0xff);
-                                    beacon.setBt(bt+" MV");
+                                    beacon.setBt(bt+" mV");
                                 }
                             }
                         }//0x7364表示电量
                         else if(type.equals("2")){
                             if(device.getSrp_raw()!=null&&!device.getSrp_raw().isEmpty()){
-                                   byte[] btdata = StringUtil.hexToByteArr(device.getSrp_raw());
+                                byte[] btdata = StringUtil.hexToByteArr(device.getSrp_raw());
                                 beacon.setBt((btdata[5]&0xff)+"%");
                             }
 
                         }
                         //
                         else if(type.equals("3")){
+                            byte[] btdata = StringUtil.hexToByteArr(device.getAdv_raw());
+                            String str = Integer.toBinaryString((btdata[29] & 0xFF) + 0x100).substring(1);
+                            char[] bit = str.toCharArray();
+                            //  println("二进制"+str);
+                            beacon.setLastTime(time);
+                            str = str.substring(0, 6);
+                            beacon.setBt(((double) (Byte.parseByte(str, 2) & 0xff) / 10.0)+"V");
+                            if (bit[7] == '1') {
+                                beacon.setSos(1);
+                            }else{
+                                beacon.setSos(0);
+                            }
 
                         }
                         /* if (btdata.length == 30) {
@@ -500,6 +511,7 @@ public class CallBackHandlers implements Runnable {
                                 }
                             }
                         }*/
+                        //信标不为空，处理信标
                         //信标不为空，处理信标
                         Tag_log tagLog=new Tag_log();
                         tagLog.setBeacon_address(beacon.getMac());
@@ -686,7 +698,13 @@ public class CallBackHandlers implements Runnable {
                     if(usedMap.get(gateway.getProject_key())!=null){
                         used=usedMap.get(gateway.getProject_key());
                     }
-                    gateways.getGatewayDevices().add(new Gateway_device(gateway.getAddress(),scanReportDataInfo.getAddr(),scanReportDataInfo.getRssi(),gateway.getX(),gateway.getY(),times,gateway.getMap_key(),gateway.getArssi(),gateway.getN(),gateway.getZ(),used));
+                    if(gateway.getMap_key()!=null&& !gateway.getMap_key().isEmpty()&&!gateway.getMap_key().equals("nomap")){
+                        if (gateways != null) {
+                            gateways.getGatewayDevices().add(new Gateway_device(gateway.getAddress(),scanReportDataInfo.getAddr(),scanReportDataInfo.getRssi(),gateway.getX(),gateway.getY(),times,gateway.getMap_key(),gateway.getArssi(),gateway.getN(),gateway.getZ(),used));
+                        }
+
+                    }
+
 
                     //   gateways.getGatewayDevices().add(new Gateway_device(gateway.getN(), gateway.getAddress(), scanReportDataInfo.getAddr(), scanReportDataInfo.getRssi(), gateway.getSub_topic(), gateway.getPub_topic(), gateway.getX(), gateway.getY(), gateway.getName()));
                     //  println("标签mac     "+scanReportDataInfo.getAddr()+"缓存="+gateways.toString());
@@ -812,6 +830,7 @@ public class CallBackHandlers implements Runnable {
                   //  Gateway gateway = (Gateway) redisUtil.get(redis_key_gateway + heartState.getGw_addr());
                     String synStr = (String) redisUtil.get(redis_key_project_sys + gateway.getAddress());
                     //心跳包更新
+                    println("网关心跳包="+gateway);
                     sendGatewayHeartbeatPush(gateway);
                  //   println("当前心跳=" + heartState.getData().getTicks_cnt());
                     //println(jsonRaw);
@@ -1080,9 +1099,8 @@ public class CallBackHandlers implements Runnable {
         try {
             Type type = new TypeToken<com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data>>() {
             }.getType();
-            com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data> scan = gson.fromJson(jsonRaw, type);
             //   println(scan.getData().getDev_infos()[0].getAddr());
-            return scan;
+            return gson.<com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report<Scan_report_data>>fromJson(jsonRaw, type);
         } catch (Exception e) {
             println("解析扫描上报数据异常");
             return null;

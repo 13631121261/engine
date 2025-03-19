@@ -289,105 +289,107 @@ public class UserControl {
             else if(customer.getType()==1&&project_key!=null||customer.getType()==2){
                 println("账号"+customer.getProject_key());
                 println("语言="+customer.getLang());
-                switch (lang){
-                    case  "en":
-                        List<Menu_en> list=null;
-                        if(customer.getType()==1){
-                            //类型1，超级管理员，获取全部界面
-                            MenuEn_Sql menu_sql=new MenuEn_Sql();
-                            list=menu_sql.getAllMenu(menuEnMapper);
-                            customer.setProject_key(project_key);
-                            redisUtil.set(httpRequest.getHeader("batoken"),customer,600);
-                        }else if(customer.getType()==2){
-                            //普通管理员，获取对应的权限
-                            project_key=customer.getProject_key();
-                            if(project_key==null||project_key.equals("")){
-                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"",lang);
-                            }
-                            else{
-                              //  println("RoseId"+customer.getRoles_id().substring(1));
-                                String[] rolesid=customer.getRoles_id().substring(1).split("-");
-                                Roles roles=null;
-                                MenuEn_Sql menu_sql=new MenuEn_Sql();
-                                Roles_Sql roles_sql=new Roles_Sql();
-                                List<Integer> ids=new ArrayList<Integer>();
-                                List<Integer> ids1=new ArrayList<Integer>();
-                                for(String id:rolesid){
-                                  //  println("获取具体的权限ID");
-                                    roles=roles_sql.getOneRoles(rolesMapper,Integer.parseInt(id));
-                                    String[] menu_ids=roles.getRules();
-                                    for(String a:menu_ids){
-                                        ids.add(Integer.parseInt(a));
+                try {
+                    switch (lang) {
+                        case "en":
+                            List<Menu_en> list = null;
+                            if (customer.getType() == 1) {
+                                //类型1，超级管理员，获取全部界面
+                                MenuEn_Sql menu_sql = new MenuEn_Sql();
+                                list = menu_sql.getAllMenu(menuEnMapper);
+                                customer.setProject_key(project_key);
+                                redisUtil.set(httpRequest.getHeader("batoken"), customer, 600);
+                            } else if (customer.getType() == 2) {
+                                //普通管理员，获取对应的权限
+                                project_key = customer.getProject_key();
+                                if (project_key == null || project_key.equals("")) {
+                                    return JsonConfig.getJsonObj(CODE_SQL_ERROR, "", lang);
+                                } else {
+                                    //  println("RoseId"+customer.getRoles_id().substring(1));
+                                    String[] rolesid = customer.getRoles_id().substring(1).split("-");
+                                    Roles roles = null;
+                                    MenuEn_Sql menu_sql = new MenuEn_Sql();
+                                    Roles_Sql roles_sql = new Roles_Sql();
+                                    List<Integer> ids = new ArrayList<Integer>();
+                                    List<Integer> ids1 = new ArrayList<Integer>();
+                                    for (String id : rolesid) {
+                                        //  println("获取具体的权限ID");
+                                        roles = roles_sql.getOneRoles(rolesMapper, Integer.parseInt(id));
+                                        String[] menu_ids = roles.getRules();
+                                        for (String a : menu_ids) {
+                                            ids.add(Integer.parseInt(a));
+                                        }
                                     }
-                                }
-                                for(int id:ids){
-                                    ids1.add(id);
-                                    Menu_en menu=  menu_sql.getMenu(menuEnMapper,id);
-                                    getMenuEn(menu_sql,menu.getPid(),ids1);
-                                }
-                                list=menu_sql.getMenu(menuEnMapper,ids1);
-                            }
-                        }
-                        //  String menus="[{\"extend\":\"none\",\"path\":\"gateway\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"children\":[{\"menu_type\":\"tab\",\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"extend\":\"none\",\"path\":\"gateway/list\",\"component\":\"/src/views/backend/gateway/list/index.vue\",\"children\":[{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/edit\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"编辑\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/add\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"添加\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/del\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"删除\",\"url\":\"\"}],\"name\":\"gateway/list\",\"id\":1}]}]";
-                        /* JSONArray.parseArray(list.*/
-                        // JSONArray menu=JSONArray.parseArray(menus);
-                        //   data.put("menus",menu);
-                       // println("id="+list.toString());
-                        data.put("menus",list);
-                        json.put("data",data);
-                        return json;
-                    case  "zh-cn":
-                        List<Menu> list1=null;
-                        if(customer.getType()==1){
-                            //类型1，超级管理员，获取全部界面
-                            Menu_Sql menu_sql=new Menu_Sql();
-                            list1=menu_sql.getAllMenu(menuMapper);
-                            customer.setProject_key(project_key);
-                            redisUtil.set(httpRequest.getHeader("batoken"),customer,600);
-                        }else if(customer.getType()==2){
-                          //  println("类型2");
-                            //普通管理员，获取对应的权限
-                            project_key=customer.getProject_key();
-                            if(project_key==null||project_key.equals("")){
-                                return JsonConfig.getJsonObj(CODE_SQL_ERROR,"",lang);
-                            }
-                            else{
-                               // println("RoseId"+customer.getRoles_id().substring(1));
-                                String[] rolesid=customer.getRoles_id().substring(1).split("-");
-                                Roles roles=null;
-                                Menu_Sql menu_sql=new Menu_Sql();
-                                Roles_Sql roles_sql=new Roles_Sql();
-                                List<Integer> ids=new ArrayList<Integer>();
-                                List<Integer> ids1=new ArrayList<Integer>();
-                                for(String id:rolesid){
-                                   // println("RoseId"+id);
-                                    roles=roles_sql.getOneRoles(rolesMapper,Integer.parseInt(id));
-                                    String[] menu_ids=roles.getRules();
-                                    for(String a:menu_ids){
-                                      //  println("RoseId"+a);
-                                        ids.add(Integer.parseInt(a));
+                                    for (int id : ids) {
+                                        ids1.add(id);
+                                        Menu_en menu = menu_sql.getMenu(menuEnMapper, id);
+                                        getMenuEn(menu_sql, menu.getPid(), ids1);
                                     }
+                                    list = menu_sql.getMenu(menuEnMapper, ids1);
                                 }
-                                for(int id:ids){
-                                  //  println("ids1+"+id);
-                                    ids1.add(id);
-                                    Menu menu=  menu_sql.getMenu(menuMapper,id);
-                                  //  println(menu);
-                                    getMenu(menu_sql,menu.getPid(),ids1);
-                                }
-                               // println("sdsd"+ids1);
-                                list1=menu_sql.getMenu(menuMapper,ids1);
                             }
-                        }
-                        //  String menus="[{\"extend\":\"none\",\"path\":\"gateway\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"children\":[{\"menu_type\":\"tab\",\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"extend\":\"none\",\"path\":\"gateway/list\",\"component\":\"/src/views/backend/gateway/list/index.vue\",\"children\":[{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/edit\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"编辑\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/add\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"添加\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/del\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"删除\",\"url\":\"\"}],\"name\":\"gateway/list\",\"id\":1}]}]";
-                        /* JSONArray.parseArray(list.*/
-                        // JSONArray menu=JSONArray.parseArray(menus);
-                        //   data.put("menus",menu);
+                            //  String menus="[{\"extend\":\"none\",\"path\":\"gateway\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"children\":[{\"menu_type\":\"tab\",\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"extend\":\"none\",\"path\":\"gateway/list\",\"component\":\"/src/views/backend/gateway/list/index.vue\",\"children\":[{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/edit\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"编辑\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/add\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"添加\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/del\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"删除\",\"url\":\"\"}],\"name\":\"gateway/list\",\"id\":1}]}]";
+                            /* JSONArray.parseArray(list.*/
+                            // JSONArray menu=JSONArray.parseArray(menus);
+                            //   data.put("menus",menu);
+                            // println("id="+list.toString());
+                            data.put("menus", list);
+                            json.put("data", data);
+                            return json;
+                        case "zh-cn":
+                            List<Menu> list1 = null;
+                            if (customer.getType() == 1) {
+                                //类型1，超级管理员，获取全部界面
+                                Menu_Sql menu_sql = new Menu_Sql();
+                                list1 = menu_sql.getAllMenu(menuMapper);
+                                customer.setProject_key(project_key);
+                                redisUtil.set(httpRequest.getHeader("batoken"), customer, 600);
+                            } else if (customer.getType() == 2) {
+                                //  println("类型2");
+                                //普通管理员，获取对应的权限
+                                project_key = customer.getProject_key();
+                                if (project_key == null || project_key.equals("")) {
+                                    return JsonConfig.getJsonObj(CODE_SQL_ERROR, "", lang);
+                                } else {
+                                    // println("RoseId"+customer.getRoles_id().substring(1));
+                                    String[] rolesid = customer.getRoles_id().substring(1).split("-");
+                                    Roles roles = null;
+                                    Menu_Sql menu_sql = new Menu_Sql();
+                                    Roles_Sql roles_sql = new Roles_Sql();
+                                    List<Integer> ids = new ArrayList<Integer>();
+                                    List<Integer> ids1 = new ArrayList<Integer>();
+                                    for (String id : rolesid) {
+                                        // println("RoseId"+id);
+                                        roles = roles_sql.getOneRoles(rolesMapper, Integer.parseInt(id));
+                                        String[] menu_ids = roles.getRules();
+                                        for (String a : menu_ids) {
+                                            //  println("RoseId"+a);
+                                            ids.add(Integer.parseInt(a));
+                                        }
+                                    }
+                                    for (int id : ids) {
+                                        //  println("ids1+"+id);
+                                        ids1.add(id);
+                                        Menu menu = menu_sql.getMenu(menuMapper, id);
+                                        //  println(menu);
+                                        getMenu(menu_sql, menu.getPid(), ids1);
+                                    }
+                                    // println("sdsd"+ids1);
+                                    list1 = menu_sql.getMenu(menuMapper, ids1);
+                                }
+                            }
+                            //  String menus="[{\"extend\":\"none\",\"path\":\"gateway\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"children\":[{\"menu_type\":\"tab\",\"keepalive\":0,\"icon\":\"fa fa-group\",\"pid\":0,\"type\":\"menu_dir\",\"title\":\"网关管理\",\"url\":\"\",\"extend\":\"none\",\"path\":\"gateway/list\",\"component\":\"/src/views/backend/gateway/list/index.vue\",\"children\":[{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/edit\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"编辑\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/add\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"添加\",\"url\":\"\"},{\"extend\":\"none\",\"path\":\"\",\"component\":\"\",\"menu_type\":null,\"keepalive\":0,\"name\":\"gateway/list/del\",\"icon\":\"\",\"pid\":3,\"id\":4,\"type\":\"button\",\"title\":\"删除\",\"url\":\"\"}],\"name\":\"gateway/list\",\"id\":1}]}]";
+                            /* JSONArray.parseArray(list.*/
+                            // JSONArray menu=JSONArray.parseArray(menus);
+                            //   data.put("menus",menu);
 
-                        data.put("menus",list1);
-                        json.put("data",data);
-                        return json;
+                            data.put("menus", list1);
+                            json.put("data", data);
+                            return json;
 
+                    }
+                }catch (Exception e){
+                    System.out.println("LOG="+e);
                 }
 
 
@@ -409,6 +411,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
    // println(" pid="+p_id);
     if(p_id!=0) {
         ids.add(p_id);
+        System.out.println("CN-IDD="+p_id);
         Menu m = menu_sql.getMenu(menuMapper, p_id);
         if(m==null){
             return;
@@ -421,10 +424,10 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
     private void getMenuEn(MenuEn_Sql menu_sql,int p_id,  List<Integer> ids){
         if(p_id!=0){
             ids.add(p_id);
+            System.out.println("ZH-IDD="+p_id);
             Menu_en m=menu_sql.getMenu(menuEnMapper,p_id);
             getMenuEn(menu_sql,m.getPid(),ids);
         }
-
     }
 /*    @RequestMapping(value = "userApi/route1", method = RequestMethod.GET,produces = "application/json")
     public JSONObject getRoute1(HttpServletRequest httpRequest,@RequestParam("project_key") @ParamsNotNull String project_key){
@@ -1071,6 +1074,14 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
             Project project=new Project(name,info,customer.getUserkey());
            boolean status= project_sql.addProject(projectMapper,project);
            if(status){
+               Check_sheet check_sheet=new Check_sheet();
+               check_sheet.setUserkey(project.getUser_key());
+               check_sheet.setProject_key(project.getProject_key());
+               check_sheet.setIntervals(3);
+               check_sheet.setCreatetime(System.currentTimeMillis()/1000);
+               CheckSheet_Sql sheetSql=new CheckSheet_Sql();
+               sheetSql.addCheck_sheet(checkSheetMapper,check_sheet);
+               check_sheetMap=sheetSql.getCheckSheet(checkSheetMapper);
                response=JsonConfig.getJsonObj(CODE_OK,"OK",lang);
            }
         }
@@ -2538,8 +2549,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         GatewayConfig_sql gatewayConfigSql=new GatewayConfig_sql();
         gatewayConfigSql.updateGatewayConfig(gatewayConfigMapper,gatewayConfig);
         String response=getJson(CODE_OK,null,lang);
-        MyMqttClient myMqttClient=myMqttClientMap.get(customer.getProject_key());
-        myMqttClient.addSubTopic(pubtopic);
+        client.addSubTopic(pubtopic);
 
         return response;
     }
@@ -2636,7 +2646,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         Customer_sql customer_sql=new Customer_sql();
         customer_sql.addUser(customerMapper,customer);
 
-        Check_sheet check_sheet=new Check_sheet();
+        /*Check_sheet check_sheet=new Check_sheet();
         check_sheet.setHost("emqx");
         check_sheet.setSub("GwData");
         check_sheet.setPub("SrvData");
@@ -2644,7 +2654,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         check_sheet.setLine_time(3);
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.addCheck_sheet(checkSheetMapper,check_sheet);
-        check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
+        check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);*/
         gatewayStatusTask.writeLog("正常添加账号");
         return JsonConfig.getJson(CODE_OK,null,lang);
     }

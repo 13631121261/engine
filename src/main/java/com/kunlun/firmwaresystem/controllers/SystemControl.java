@@ -47,7 +47,8 @@ public class SystemControl {
         JSONObject jsonObject= JsonConfig.getJsonObj(JsonConfig.CODE_OK,"",customer.getLang());
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper,check_sheet);
-        new Thread(new Runnable() {
+        check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
+       /* new Thread(new Runnable() {
             @Override
             public void run() {
                 check_sheetMap.put(customer.getProject_key(),check_sheet);
@@ -76,17 +77,17 @@ public class SystemControl {
             @Override
             public void run() {
 
-                TMyMqttClient myMqttClient=t_myMqttClientMap.get(customer.getProject_key());
-                if(myMqttClient!=null&&myMqttClient.getStatus()){
+              //  TMyMqttClient myMqttClient=t_myMqttClientMap.get(customer.getProject_key());
+                if(client!=null&&client.getStatus()){
                     println("sdsd");
-                    myMqttClient.disConnect();
-                    myMqttClient.setHost(check_sheet.getHost());
-                    myMqttClient.setPort(check_sheet.getPort());
-                    myMqttClient.setPassword(check_sheet.getPassword());
-                    myMqttClient.setUser(check_sheet.getUser());
+                    client.disConnect();
+                    client.setHost(check_sheet.getHost());
+                    client.setPort(check_sheet.getPort());
+                    client.setPassword(check_sheet.getPassword());
+                    client.setUser(check_sheet.getUser());
 
                     myMqttClient.TMyMqttClient(check_sheet.getHost(),check_sheet.getPort());
-                    myMqttClient.start();
+                    client.start();
                 }
                 else{
                     println("sss");
@@ -96,7 +97,7 @@ public class SystemControl {
                 }
 
             }
-        }).start();
+        }).start();*/
         return jsonObject;
 
     }
@@ -107,8 +108,12 @@ public class SystemControl {
         println("SystemGet"+check_sheetMap);
        Check_sheet check_sheet= check_sheetMap.get(customer.getProject_key());
         JSONObject jsonObject= JsonConfig.getJsonObj(JsonConfig.CODE_OK,check_sheet,customer.getLang());
-       boolean status=  myMqttClientMap.get(customer.getProject_key()).getStatus();
-        jsonObject.put("mqtt_status",status);
+        try{
+            boolean status=  client.getStatus();
+            jsonObject.put("mqtt_status",status);
+        } catch (RuntimeException e) {
+            jsonObject.put("mqtt_status",false);
+        }
         return jsonObject;
     }
 

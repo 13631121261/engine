@@ -259,6 +259,7 @@ public class StringUtil {
         if (beacon.getUser_key() == null) {
             return;
         }
+        println("进行在线或者离线检测"+beacon.getMac()+"======="+status);
         if (beacon.getOnline() != status) {
             Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
             if (check_sheet !=null) {
@@ -269,7 +270,6 @@ public class StringUtil {
                     jsonObject.put("push_type", "online");
                 }else{
                     jsonObject.put("push_type", "offline");
-
                 }
                 jsonObject.put("last_time",beacon.getLastTime());
               //  jsonObject.put("push_type", "online");
@@ -294,8 +294,8 @@ public class StringUtil {
             return;
         }
         if (gateway.getOnline() != status) {
-                Check_sheet check_sheet = check_sheetMap.get(gateway.getProject_key());
-                if (check_sheet != null){
+               // Check_sheet check_sheet = check_sheetMap.get(gateway.getProject_key());
+                //if (check_sheet != null){
                     gateway.setOnline(status);
                     Gateway_sql gateway_sql = new Gateway_sql();
                     // println("上线后更新到数据库");
@@ -321,7 +321,7 @@ public class StringUtil {
                     RabbitMessage rabbitMessage = new RabbitMessage();
                     rabbitMessage.setMsg(jsonObject.toString());
                     directExchangeProducer.send(rabbitMessage.toString(), Push);
-            }
+            //}
         }
     }
     //给第三方推送设备离线
@@ -330,9 +330,9 @@ public class StringUtil {
             return;
         }
 
-            Check_sheet check_sheet = check_sheetMap.get(gateway.getProject_key());
-
-            if (check_sheet != null){
+           // Check_sheet check_sheet = check_sheetMap.get(gateway.getProject_key());
+                 println("输出");
+          //  if (check_sheet != null){
                 gateway.setOnline(1);
                 Gateway_sql gateway_sql = new Gateway_sql();
                 // println("上线后更新到数据库");
@@ -355,11 +355,11 @@ public class StringUtil {
               //  println("转发原始="+rabbitMessage.getMsg());
                 directExchangeProducer.send(rabbitMessage.toString(), Push);
 
-        }
+       // }
     }
     //给第三方推送位置信息
     public static void sendLocationPush(Beacon beacon) {
-        //  println("--------------12");
+        // println("--------------12");
         if (beacon.getUser_key() == null) {
             return;
         }

@@ -6,8 +6,6 @@ public class Constant {
     public static final String pkt_type_command = "command";
     public static final String pkt_type_response = "response";
     public static final String pkt_type_state = "state";
-
-
     ///command
     public static final String cmd_conn_addr_request = "conn_addr_request";
     public static final String cmd_conn_addr_disconn = "conn_addr_disconn";

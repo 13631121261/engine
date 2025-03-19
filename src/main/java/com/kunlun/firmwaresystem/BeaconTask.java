@@ -38,7 +38,6 @@ public class BeaconTask {
     @Scheduled(cron = "*/59 * * * * ?")
     public void execute() throws Exception {
         deleteCache();
-
         try {
             println("信标定时检测运行  60秒一次-------------------------------------------" + runcount);
             Beacon_Sql beacon_sql = new Beacon_Sql();
@@ -179,7 +178,8 @@ public class BeaconTask {
         Alarm_Sql alarm_sql=new Alarm_Sql();
         alarm_sql.deleteBy15Day(alarmMapper,one_time);
         TagLogSql tagLogSql=new TagLogSql();
-        tagLogSql.deleteBy30s(tagLogMapper,System.currentTimeMillis()/1000-15);
+      //  tagLogSql.deleteBy30s(tagLogMapper,System.currentTimeMillis()/1000-15);
 
+        tagLogSql.keepLatest200Records(tagLogMapper);
     }
 }

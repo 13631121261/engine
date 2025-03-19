@@ -32,7 +32,7 @@ import static com.kunlun.firmwaresystem.mqtt.DirectExchangeRabbitMQConfig.Push;
 
 @Component
 public class DirectExchangeConsumer {
-    MyMqttClient myMqttClient1;
+  //  MyMqttClient myMqttClient1;
     MyWebSocket webSocket = MyWebSocket.getWebSocket();
     MyWebSocketTag webSockettag = MyWebSocketTag.getWebSocket();
     MyWebSocket_debug webSocket_debug = MyWebSocket_debug.getWebSocket();
@@ -54,7 +54,7 @@ public class DirectExchangeConsumer {
             if (NewSystemApplication.check_sheetMap == null) {
                 return;
             }
-            for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
+          /*  for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
                 myMqttClient1= entry.getValue();
                // println("key="+entry.getKey());
                 if (myMqttClient1 == null||!myMqttClient1.getStatus()) {
@@ -70,7 +70,24 @@ public class DirectExchangeConsumer {
                 }
               //  JSONObject jsonObject1 = JSONObject.parseObject(data);
                 //     println(sdf.format(new Date())+"发给网关关关了"+"id="+jsonObject1.getInteger("id"));
+            }*/
+   //     for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
+           // myMqttClient1= entry.getValue();
+            // println("key="+entry.getKey());
+            if (client == null||!client.getStatus()) {
+                println("2222myMqttClient=null");
+                return;
             }
+            //全部的下发给网关的消息都在这里集中下发。
+            JSONObject jsonObject = JSONObject.parseObject(msg);
+            String topic = jsonObject.getString("pubTopic");
+            String data = jsonObject.getString("msg");
+            if (topic != null && data != null) {
+                client.sendToTopic(topic, data, 11);
+            }
+            //  JSONObject jsonObject1 = JSONObject.parseObject(data);
+            //     println(sdf.format(new Date())+"发给网关关关了"+"id="+jsonObject1.getInteger("id"));
+      //  }
 
     }
 
@@ -94,9 +111,9 @@ public class DirectExchangeConsumer {
         JSONObject jsonObject = JSONObject.parseObject(msg);
         String key = jsonObject.getString("project_key");
         String data = jsonObject.getString("msg");
-
+        System.out.println("推送到地图");
         if (key != null && data != null) {
-
+            System.out.println("11111111111推送到地图");
             webSockettag.sendData(key, data);
         }
     }
@@ -123,14 +140,20 @@ public class DirectExchangeConsumer {
                 JSONObject jsonObject = JSONObject.parseObject(msg);
                 String topic = jsonObject.getString("pubTopic");
                 String project_key=jsonObject.getString("project_key");
-                if(myMqttClientMap !=null){
+            /*    if(myMqttClientMap !=null){
                     myMqttClient1=myMqttClientMap.get(project_key);
                     if(myMqttClient1!=null){
                         myMqttClient1.addSubTopic(topic);
                     }
                     return;
-                }
-
+                }*/
+       // if(myMqttClientMap !=null){
+          //  myMqttClient1=myMqttClientMap.get(project_key);
+          //  if(myMqttClient1!=null){
+                client.addSubTopic(topic);
+          //  }
+            return;
+      //  }
         }
 
     @RabbitListener(queues = "transpond")
@@ -201,17 +224,18 @@ public class DirectExchangeConsumer {
             Check_sheet check_sheet= check_sheetMap.get(project_key);
             if(check_sheet!=null){
                 int type=check_sheet.getRelay_type();
+                System.out.println("转发===="+type);
                 if(type==0){
                     sendUdp(data,check_sheet.getUdp(),check_sheet.getR_port());
                 }else if(type==1){
                 //    println("MQTT");
-                    if(t_myMqttClientMap==null){
+                    if(client==null){
                         return;
                     }
-                    TMyMqttClient client= t_myMqttClientMap.get(project_key);
+
                     if(client!=null&&client.getStatus()){
-                     //   println("推送开始");
-                        client.sendToTopic(check_sheet.getR_pub(),JSONObject.toJSONString(device));
+                        println("推送开始"+check_sheet.getR_pub());
+                        client.sendToTopic("location_engine",JSONObject.toJSONString(device),1);
                     }
                 }
             }

@@ -2,11 +2,12 @@ package com.kunlun.firmwaresystem.mqtt;
 
 import com.kunlun.firmwaresystem.NewSystemApplication;
 import com.sun.xml.bind.v2.runtime.output.SAXOutput;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,7 +19,7 @@ import static com.kunlun.firmwaresystem.NewSystemApplication.println;
 
 public class MyMqttClient {
 
-    private  MqttClient client = null;
+    private MqttClient client = null;
     private String content = "Hello World";
     private int qos = 2;
     private String host;
@@ -58,13 +59,16 @@ public class MyMqttClient {
             return this;
         }
     }*/
+    public void reconnect() throws MqttException {
+        client.reconnect();
+    }
     public void MyMqttClient1(String host,int port) {
         try {
             MemoryPersistence persistence = new MemoryPersistence();
             println("地址=tcp://"+host+":"+port);
             client = new MqttClient("tcp://"+host+":"+port, clientId, persistence);
             println("地址="+  client.getServerURI());
-            println("地址="+  client);
+            println("地址ID="+  clientId);
         } catch (MqttException me) {
             println("reason " + me.getReasonCode());
             println("msg " + me.getMessage());
@@ -93,14 +97,14 @@ public class MyMqttClient {
 
     public boolean start() {
         try {
-            MqttConnectOptions connOpts = new MqttConnectOptions();
+            MqttConnectionOptions connOpts = new MqttConnectionOptions();
             if(password!=null&&password.length()>0){
-                connOpts.setPassword(password.toCharArray());
+                connOpts.setPassword(password.getBytes());
             }
             if(user!=null&&user.length()>0){
                 connOpts.setUserName(user);
             }
-            connOpts.setCleanSession(true);
+            connOpts.setKeepAliveInterval(60);
             println("客户端="+host);
             // 设置回调
             MessageCallback c=new  MessageCallback(this);
@@ -169,7 +173,7 @@ public boolean getStatus(){
             if(topic.equals("#")){
                 return false;
             }
-            client.subscribe(topic);
+            client.subscribe(topic,0);
             return true;
         } catch (MqttException e) {
             println("订阅主题异常 Topic=" + topic);

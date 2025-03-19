@@ -148,9 +148,7 @@ public class getLocationTask {
                   ArrayList<Gateway_device> beaconTags = null;
                 //  println("debug-="+beacon_address);
                   if(beacon_address!=null&& !beacon_address.isEmpty()){
-
                       Beacon beacon=beaconsMap.get(beacon_address);
-
                       if(beacon!=null){
                           if(beacon.getProject_key().equals(key)){
                               String json = null;
@@ -159,7 +157,6 @@ public class getLocationTask {
                                   if(json!=null){
                                       gateways = new Gson().fromJson(json, Gateway_devices.class);
                                       Location location = util.calculate(    gateways.getGatewayDevices(), beacon_address);
-
                                      // println("X="+location.getX()+"   Y="+location.getY());
                                       beacon.setMap_key(location.getMap_key());
                                       ArrayList<Object> list=new ArrayList<>();
@@ -220,43 +217,17 @@ public class getLocationTask {
                           }
                       }
 
-
-
-
                   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                   for(String address:beaconsMap.keySet()){
-
                       Beacon beacon=beaconsMap.get(address);
-                      if(beacon!=null&&beacon.getOnline()==1&&beacon.getProject_key().equals(key)){
+                     // System.out.println("信标="+beacon.getMac()+"在线离线="+beacon.getOnline()+"   项目循环="+beacon.getProject_key()+"   当前项目="+key);
 
+                      if(beacon.getOnline() == 1 && beacon.getProject_key().equals(key)){
                           String json = null;
                           try {
                               json = (String) redisUtil.get(redis_key_device_gateways + address);
                               if(json!=null){
-
                                   gateways = new Gson().fromJson(json, Gateway_devices.class);
                                ///   println("数据="+json);
                                   if(gateways.getGatewayDevices().isEmpty()){
@@ -267,11 +238,7 @@ public class getLocationTask {
                                   }
                                   Location location = util.calculate(    gateways.getGatewayDevices(), address);
                                 //  println("计算位置="+location);
-
-
-
                                   beacon.setMap_key(location.getMap_key());
-
                                   ArrayList<Object> list=new ArrayList<>();
                                   if(open_b){
                                    //记得这里可能涉及json的无穷大只
@@ -310,8 +277,6 @@ public class getLocationTask {
                                           if(d>8){
                                               location.setX(( 2.8+(d-8)* 0.05)*a+location1.getX());
                                               location.setY(( 2.8+(d-8)* 0.05)*b+location1.getY());
-
-
                                           }else if(d>5){
                                               location.setX((2.5+(d-5)*0.1)*a+location1.getX());
                                               location.setY((2.5+(d-5)*0.1)*b+location1.getY());
@@ -388,115 +353,120 @@ public class getLocationTask {
                        //   println("331数据="+fWordcard);
 
                           try {
-                              Object o=redisUtil.get(redis_key_device_gateways + imei);
-                              if(o==null){
-                                  return;
-                              }
-                              beaconTags = (ArrayList<Gateway_device>) redisUtil.get(redis_key_device_gateways + imei);
+
+                                Object o = redisUtil.get(redis_key_device_gateways + imei);
+
+
+                                if (o != null) {
+                                    if(o.getClass().getName().contains("String")){
+                                        System.out.println("O=异常="+((String)o));
+                                    }
+
+                                    beaconTags = (ArrayList<Gateway_device>) o;
+                                } else {
+                                    return;
+                                }
                               println("1数据="+beaconTags);
-                              if(beaconTags!=null){
-                                  println("1数据2="+beaconTags.size());
-                                  if(beaconTags.isEmpty()){
-                                      continue;
-                                  }
-                                  Location location = util.calculate( beaconTags, imei);
-                                  //  println("计算位置="+location);
+                              println("1数据2=" + beaconTags.size());
+                              if(beaconTags.isEmpty()){
+                                  continue;
+                              }
+                              Location location = util.calculate( beaconTags, imei);
+                              //  println("计算位置="+location);
 
 
+                              fWordcard.setMap_key(location.getMap_key());
 
-                                  fWordcard.setMap_key(location.getMap_key());
-
-                                  ArrayList<Object> list=new ArrayList<>();
-                                  if(open_b){
-                                      //记得这里可能涉及json的无穷大只
-                                      //   aa
-                                      Location location1=null;
-                                      try {
-                                          location1=(Location) redisUtil.get(redis_key_location +imei);
-                                      }catch (Exception e){
-                                          println("莫名错误11");
-                                      }
-
-                                      if(location1!=null&&!Double.isNaN(location1.getY())&&!Double.isNaN(location1.getX())){
-
-                                          //  println("location1="+location1);
-                                          //<=3米，33%        0.33x              1米对应0.33米， 3米对应1米
-                                          //3-5米，   1+(x-3)*0.75                5米对应2.5米
-                                          //5-8米，   2.5+（x-5)*0.1            8米对应2.8米
-                                          //>8米    2.8+(x-8)* 0.05            12米对应3米      20米对应3.4米
-                                          double d=Math.sqrt(Math.pow((location.getX()-location1.getX()),2)+Math.pow((location.getY()-location1.getY()),2));
-                                          // println("两点距离="+d);
-                                          double y=(location.getY()-location1.getY());
-                                          double x=(location.getX()-location1.getX());
-                                          int a=x>=0?1:-1;
-                                          int b=y>=0?1:-1;
-                                         /* if(location.getMac().equals("f0c890021002")){
-                                              println("原始=="+location.getX());
-                                              println("原始=="+location.getY());
-                                              println("旧的原始=="+location1.getX());
-                                              println("旧的原始=="+location1.getY());
-
-                                              println("A="+a);
-                                              println("B="+b);
-                                              println("D="+d);
-                                          }*/
-
-                                          if(d>8){
-                                              location.setX(( 2.8+(d-8)* 0.05)*a+location1.getX());
-                                              location.setY(( 2.8+(d-8)* 0.05)*b+location1.getY());
-
-
-                                          }else if(d>5){
-                                              location.setX((2.5+(d-5)*0.1)*a+location1.getX());
-                                              location.setY((2.5+(d-5)*0.1)*b+location1.getY());
-                                          }
-                                          else if(d>3){
-                                              location.setX((1+(d-3)*0.75)*a +location1.getX());
-                                              location.setY((1+(d-3)*0.75)*b +location1.getY());
-                                          }else {
-                                              location.setX(d*0.33*a+location1.getX());
-                                              location.setY(d*0.33*b+location1.getY());
-                                              // println("这里666="+d*0.33*a);
-                                          }
-                                      }else{
-                                          println("不存在+位置");
-                                      }
-                                  /*    if(location.getMac().equals("f0c890021002")) {
-                                          println("原始==" + location.getX());
-                                          println("原始==" + location.getY());
-                                      }*/
-                                      list.add(fWordcard);
-                                      //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
-
-                                  }
-                              //    fWordcardMap.put(imei,fWordcard);
+                              ArrayList<Object> list=new ArrayList<>();
+                              if(open_b){
+                                  //记得这里可能涉及json的无穷大只
+                                  //   aa
+                                  Location location1=null;
                                   try {
-                                      redisUtil.set(redis_key_location + imei, location);
+                                      location1=(Location) redisUtil.get(redis_key_location +imei);
                                   }catch (Exception e){
                                       println("莫名错误11");
                                   }
-                                  //  println("location.getY="+location.getY());
-                                  fWordcard.setX(location.getX());
-                                  fWordcard.setY(location.getY());
-                                  sendLocationPush_OFcat1(fWordcard);
-                                  //  if(s%6==0){
-                                  try {
-                                      JSONObject jsonObject1 = new JSONObject();
-                                      //   println("list="+list);
-                                      jsonObject1.put("tag", list);
 
-                                      RabbitMessage rabbitMessage1 = new RabbitMessage("", jsonObject1.toString(), fWordcard.getMap_key());
-                                      println("CAT1推送-----"+rabbitMessage1.toString());
-                                      directExchangeProducer.send(rabbitMessage1.toString(), "sendtoMap");
+                                  if(location1!=null&&!Double.isNaN(location1.getY())&&!Double.isNaN(location1.getX())){
+
+                                      //  println("location1="+location1);
+                                      //<=3米，33%        0.33x              1米对应0.33米， 3米对应1米
+                                      //3-5米，   1+(x-3)*0.75                5米对应2.5米
+                                      //5-8米，   2.5+（x-5)*0.1            8米对应2.8米
+                                      //>8米    2.8+(x-8)* 0.05            12米对应3米      20米对应3.4米
+                                      double d=Math.sqrt(Math.pow((location.getX()-location1.getX()),2)+Math.pow((location.getY()-location1.getY()),2));
+                                      // println("两点距离="+d);
+                                      double y=(location.getY()-location1.getY());
+                                      double x=(location.getX()-location1.getX());
+                                      int a=x>=0?1:-1;
+                                      int b=y>=0?1:-1;
+                                     /* if(location.getMac().equals("f0c890021002")){
+                                          println("原始=="+location.getX());
+                                          println("原始=="+location.getY());
+                                          println("旧的原始=="+location1.getX());
+                                          println("旧的原始=="+location1.getY());
+
+                                          println("A="+a);
+                                          println("B="+b);
+                                          println("D="+d);
+                                      }*/
+
+                                      if(d>8){
+                                          location.setX(( 2.8+(d-8)* 0.05)*a+location1.getX());
+                                          location.setY(( 2.8+(d-8)* 0.05)*b+location1.getY());
+
+
+                                      }else if(d>5){
+                                          location.setX((2.5+(d-5)*0.1)*a+location1.getX());
+                                          location.setY((2.5+(d-5)*0.1)*b+location1.getY());
+                                      }
+                                      else if(d>3){
+                                          location.setX((1+(d-3)*0.75)*a +location1.getX());
+                                          location.setY((1+(d-3)*0.75)*b +location1.getY());
+                                      }else {
+                                          location.setX(d*0.33*a+location1.getX());
+                                          location.setY(d*0.33*b+location1.getY());
+                                          // println("这里666="+d*0.33*a);
+                                      }
+                                  }else{
+                                      println("不存在+位置");
                                   }
-                                  catch (Exception e){
-                                      println("莫名错误996"+e.getMessage());
-                                  }
-                                  //
-                                  redisUtil.set(redis_key_device_gateways + imei,"");
+                              /*    if(location.getMac().equals("f0c890021002")) {
+                                      println("原始==" + location.getX());
+                                      println("原始==" + location.getY());
+                                  }*/
+                                  list.add(fWordcard);
+                                  //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
+
                               }
+                              //    fWordcardMap.put(imei,fWordcard);
+                              try {
+                                  redisUtil.set(redis_key_location + imei, location);
+                              }catch (Exception e){
+                                  println("莫名错误11");
+                              }
+                              //  println("location.getY="+location.getY());
+                              fWordcard.setX(location.getX());
+                              fWordcard.setY(location.getY());
+                              sendLocationPush_OFcat1(fWordcard);
+                              //  if(s%6==0){
+                              try {
+                                  JSONObject jsonObject1 = new JSONObject();
+                                  //   println("list="+list);
+                                  jsonObject1.put("tag", list);
+
+                                  RabbitMessage rabbitMessage1 = new RabbitMessage("", jsonObject1.toString(), fWordcard.getMap_key());
+                                  println("CAT1推送-----"+rabbitMessage1.toString());
+                                  directExchangeProducer.send(rabbitMessage1.toString(), "sendtoMap");
+                              }
+                              catch (Exception e){
+                                  println("莫名错误996"+e.getMessage());
+                              }
+                              //
+                              redisUtil.set(redis_key_device_gateways + imei,null);
                           } catch (Exception e) {
-                              println("json="+beaconTags);
+                              println("22json="+beaconTags);
                               println("11法国红酒封口的"+e.getMessage());
                           }
 

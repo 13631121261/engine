@@ -37,7 +37,7 @@ public class gatewayStatusTask {
 
         //    Gateway gateway = (Gateway) redisUtil.get(redis_key_gateway + key);
             Gateway gateway = (Gateway)    GatewayMap.get(key);
-            //println("自动更新网关="+gateway);
+           // println("自动更新网关="+gateway);
             if(gateway==null){
                 println("此网关是空="+key);
                 continue;
@@ -73,6 +73,7 @@ public class gatewayStatusTask {
                     Alarm_Sql alarm_sql=new Alarm_Sql();
                     alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_offline, Alarm_object.gateway,gateway.getMap_key(),0,"",0,0,"",gateway.getName(),gateway.getAddress(),gateway.getProject_key(),gateway.getLasttime()));
                 }
+                println("推送离线"+gateway.getAddress());
                 StringUtil.sendGatewayPush(gateway,0);
                 //gateway.setOnline(0);
                 //println("离线");
@@ -99,8 +100,6 @@ public class gatewayStatusTask {
 
             for (String gateway_address : gatewayMap.keySet()) {
                 Gateway gateway = (Gateway) redisUtil.get(redis_key_gateway + gateway_address);
-                //  println(gateway_address+"网关="+gateway.getConfig_key());
-
                 if (gateway!=null&&gateway.getConfig_key()!=null&&gateway.getConfig_key().equals(config_key)) {
                    //     println("符合项目的网关"+config_key);
                     count++;
@@ -136,16 +135,25 @@ public class gatewayStatusTask {
 
 
     public void checkMqtt() {
-        for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (client!=null&&!client.getStatus()){
+                    println("mqtt执行重连哦");
+                    client.start();
+                }
+            }
+        }).start();
+
+        /*for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
             if (entry.getValue() != null) {
                 if (!entry.getValue().getStatus()) {
 
-                    println("mqtt执行重连哦");
-                    entry.getValue().start();
+
                 }
             }
 
-        }
+        }*/
     }
         //每三个定时周期，获取一次网关的配置，保持和服务器同步。
         private void getAllGatewayConfig () {

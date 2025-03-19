@@ -27,37 +27,37 @@ public class DirectExchangeRabbitMQConfig {
     // 声明直连交换机
     @Bean
     public DirectExchange directExchange() {
-        return new DirectExchange(directExchangeName);
+        return new DirectExchange(directExchangeName,false,false);
     }
 
     // 声明消息队列
     @Bean
     public Queue messageQueue1() {
-        return new Queue("sendToGateway");
+        return new Queue("sendToGateway",false);
     }
     @Bean
     public Queue messageQueue2() {
-        return new Queue("transpond");
+        return new Queue("transpond",false);
     }
     @Bean
     public Queue messageQueue5() {
-        return new Queue("mqtt_topic");
+        return new Queue("mqtt_topic",false);
     }
     @Bean
     public Queue messageQueue4() {
-        return new Queue(Push);
+        return new Queue(Push,false);
     }
     @Bean
     public Queue messageQueue3() {
-        return new Queue("sendtoHtml");
+        return new Queue("sendtoHtml",false);
     }
     @Bean
     public Queue messageQueue6() {
-        return new Queue(sendtoMap);
+        return new Queue(sendtoMap,false);
     }
     @Bean
     public Queue messageQueue7() {
-        return new Queue(sendtoMap_debug);
+        return new Queue(sendtoMap_debug,false);
     }
 
 

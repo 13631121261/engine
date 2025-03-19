@@ -14,8 +14,17 @@ public class Gateway_device {
     double d;
     double z;
     int used;
+    int l_type;
     public Gateway_device() {
 
+    }
+
+    public void setL_type(int l_type) {
+        this.l_type = l_type;
+    }
+
+    public int getL_type() {
+        return l_type;
     }
 
     public void setUsed(int used) {

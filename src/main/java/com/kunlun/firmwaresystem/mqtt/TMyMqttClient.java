@@ -1,11 +1,12 @@
 package com.kunlun.firmwaresystem.mqtt;
 
 import com.kunlun.firmwaresystem.NewSystemApplication;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
-import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.client.MqttClient;
+import org.eclipse.paho.mqttv5.client.MqttConnectionOptions;
+import org.eclipse.paho.mqttv5.client.persist.MemoryPersistence;
+import org.eclipse.paho.mqttv5.common.MqttException;
+import org.eclipse.paho.mqttv5.common.MqttMessage;
+
 
 import java.text.SimpleDateFormat;
 import java.util.concurrent.ExecutorService;
@@ -16,7 +17,7 @@ import static com.kunlun.firmwaresystem.NewSystemApplication.println;
 
 public class TMyMqttClient {
 
-    private  MqttClient client = null;
+    private MqttClient client = null;
     private String content = "Hello World";
     private int qos = 2;
     private String host;
@@ -72,15 +73,16 @@ public class TMyMqttClient {
         }
     }
     public boolean start() {
+
         try {
-            MqttConnectOptions connOpts = new MqttConnectOptions();
+            MqttConnectionOptions connOpts = new MqttConnectionOptions();
             if(password!=null&&password.length()>0){
-                connOpts.setPassword(password.toCharArray());
+                connOpts.setPassword(password.getBytes());
             }
             if(user!=null&&user.length()>0){
                 connOpts.setUserName(user);
             }
-            connOpts.setCleanSession(true);
+            connOpts.setKeepAliveInterval(60);
             println("客户端="+host);
 
             // 建立连接
@@ -89,7 +91,7 @@ public class TMyMqttClient {
 
             println("转发mqtt + client已连接");
             connect_count=0;
-        } catch (MqttException e) {
+        } catch (Exception e) {
             println("重连="+host);
             connect_count++;
             if(connect_count>5){
