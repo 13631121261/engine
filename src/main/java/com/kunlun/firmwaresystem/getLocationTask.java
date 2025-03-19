@@ -1,5 +1,6 @@
 package com.kunlun.firmwaresystem;
 
+import com.alibaba.fastjson.JSONObject;
 import com.google.gson.Gson;
 import com.kunlun.firmwaresystem.device.Gateway_devices;
 import com.kunlun.firmwaresystem.entity.Beacon;
@@ -12,7 +13,7 @@ import com.kunlun.firmwaresystem.location_util.backup.LocationUtil;
 import com.kunlun.firmwaresystem.mqtt.RabbitMessage;
 import com.kunlun.firmwaresystem.sql.FWordcard_Sql;
 import com.kunlun.firmwaresystem.sql.History_Sql;
-import net.sf.json.JSONObject;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -230,12 +231,6 @@ public class getLocationTask {
                               if(json!=null){
                                   gateways = new Gson().fromJson(json, Gateway_devices.class);
                                ///   println("数据="+json);
-                                  if(gateways.getGatewayDevices().isEmpty()){
-                                      if(address.equals("f0c890022077")){
-                                          println("参数为空+位置");
-                                      }
-                                      continue;
-                                  }
                                   Location location = util.calculate(    gateways.getGatewayDevices(), address);
                                 //  println("计算位置="+location);
                                   beacon.setMap_key(location.getMap_key());
@@ -309,6 +304,7 @@ public class getLocationTask {
                                 //  println("location.getY="+location.getY());
                                   beacon.setX(location.getX());
                                   beacon.setY(location.getY());
+                                  beacon.setGateway_address(location.getgAddress());
                                   sendLocationPush(beacon);
                                 //  if(s%6==0){
                                   try {

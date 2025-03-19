@@ -121,7 +121,9 @@ public class LocationUtil {
         if (list.size() == 3) {
            // println("就三个基站");
             Point point=getPoint(list);
-            point.setList(list);
+            if (point != null) {
+                point.setList(list);
+            }
             return  point;
         } else {
             //取信号强度最强的四个，每三个定位一次，再取中间点。

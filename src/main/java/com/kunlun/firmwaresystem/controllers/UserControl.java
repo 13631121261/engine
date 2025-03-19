@@ -40,7 +40,7 @@ import java.util.*;
 import static com.kunlun.firmwaresystem.NewSystemApplication.*;
 import static com.kunlun.firmwaresystem.gatewayJson.Constant.*;
 import static com.kunlun.firmwaresystem.util.JsonConfig.*;
-import static javafx.scene.input.DataFormat.URL;
+
 
 @RestController
 public class UserControl {

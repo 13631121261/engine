@@ -117,8 +117,8 @@ public class MyMqttClient {
             if(sub!=null){
                 addSubTopic(sub);
             }
-            addSubTopic("/cle/mqtt");
-            addSubTopic("GwDatat");
+          //  addSubTopic("/cle/mqtt");
+            addSubTopic("GwData");
             addSubTopic("AlphaRsp");
             addSubTopic("connected");
             addSubTopic("disconnected");

@@ -6,10 +6,7 @@ import com.kunlun.firmwaresystem.entity.Wifi_firmware;
 import com.kunlun.firmwaresystem.interceptor.ParamsNotNull;
 import com.kunlun.firmwaresystem.mappers.BleMapper;
 import com.kunlun.firmwaresystem.mappers.WifiMapper;
-import com.kunlun.firmwaresystem.sql.Ble;
-import com.kunlun.firmwaresystem.sql.Wifi;
-import com.kunlun.firmwaresystem.util.constant;
-import net.sf.json.JSONObject;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

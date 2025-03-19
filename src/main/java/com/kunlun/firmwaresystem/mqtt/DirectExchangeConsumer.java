@@ -206,6 +206,9 @@ public class DirectExchangeConsumer {
             String map_key=jsonObject.getString("map_key");
             device.setMap_key(map_key);
         }
+        if(jsonObject.getString("gateway_address")!=null){
+            device.setGateway_address(jsonObject.getString("gateway_address"));
+        }
         device.setDevice_type(device_type);
         Long last_time=jsonObject.getLong("last_time");
         if(last_time!=null){

@@ -11,6 +11,8 @@ public class Point {
      int a;
      double n;
      double d;
+     String gAddress;
+
     public Point(double x, double y, String mac,String map_key) {
         this.x = x;
         this.y = y;
@@ -45,6 +47,22 @@ public class Point {
 
     public void setList(ArrayList<Gateway_device> list) {
         this.list = list;
+        if (list != null) {
+            int rssi=-100;
+            String gAddress="";
+            for (Gateway_device gateway_device : list) {
+                 if(gateway_device.getRssi()>rssi){
+                     rssi=gateway_device.getRssi();
+                     gAddress=gateway_device.getgAddress();
+                 }
+            }
+            this.gAddress=gAddress;
+        }
+
+    }
+
+    public String getgAddress() {
+        return gAddress;
     }
 
     public ArrayList<Gateway_device> getList() {

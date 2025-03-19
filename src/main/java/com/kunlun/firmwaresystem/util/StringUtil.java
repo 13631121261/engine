@@ -1,12 +1,12 @@
 package com.kunlun.firmwaresystem.util;
 
 
+import com.alibaba.fastjson.JSONObject;
 import com.kunlun.firmwaresystem.device.Gateway;
 import com.kunlun.firmwaresystem.entity.*;
 import com.kunlun.firmwaresystem.gatewayJson.type_scan_report.Scan_report_data_info;
 import com.kunlun.firmwaresystem.mqtt.RabbitMessage;
 import com.kunlun.firmwaresystem.sql.Gateway_sql;
-import net.sf.json.JSONObject;
 import org.apache.tomcat.util.http.fileupload.ByteArrayOutputStream;
 
 import java.io.IOException;
@@ -260,7 +260,7 @@ public class StringUtil {
             return;
         }
         println("进行在线或者离线检测"+beacon.getMac()+"======="+status);
-        if (beacon.getOnline() != status) {
+      //  if (beacon.getOnline() != status) {
             Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
             if (check_sheet !=null) {
                 beacon.setOnline(status);
@@ -279,14 +279,39 @@ public class StringUtil {
                 id++;
                 jsonObject.put("id", id);
                 jsonObject.put("time", sdf.format(new Date()));
-                //    println("原始信标" + sdf.format(new Date()) + "Push" + "id=" + id);
+                    println("原始信标" + jsonObject);
                 RabbitMessage rabbitMessage = new RabbitMessage();
                 rabbitMessage.setMsg(jsonObject.toString());
                 directExchangeProducer.send(rabbitMessage.toString(), Push);
-            }
+           // }
         }
     }
+    public static void sendBeaconPush_Bt(Beacon beacon, int status) {
+        //  println("--------------12");
+        if (beacon.getUser_key() == null) {
+            return;
+        }
+      //  println("进行在线或者离线检测"+beacon.getMac()+"======="+status);
+    //    if (beacon.getOnline() != status) {
 
+                beacon.setOnline(status);
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("device_type", "beacon");
+                jsonObject.put("push_type", "bt");
+                jsonObject.put("last_time",beacon.getLastTime());
+                jsonObject.put("bt", beacon.getBt());
+                jsonObject.put("address", beacon.getMac());
+                jsonObject.put("project_key", beacon.getProject_key());
+                id++;
+                jsonObject.put("id", id);
+                jsonObject.put("time", sdf.format(new Date()));
+                println("原始信标" + jsonObject);
+                RabbitMessage rabbitMessage = new RabbitMessage();
+                rabbitMessage.setMsg(jsonObject.toString());
+                directExchangeProducer.send(rabbitMessage.toString(), Push);
+
+        //}
+    }
 
     //给第三方推送设备离线
     public static void sendGatewayPush(Gateway gateway, int status) {
@@ -359,7 +384,7 @@ public class StringUtil {
     }
     //给第三方推送位置信息
     public static void sendLocationPush(Beacon beacon) {
-        // println("--------------12");
+         println("--------------12");
         if (beacon.getUser_key() == null) {
             return;
         }
@@ -370,16 +395,18 @@ public class StringUtil {
             jsonObject.put("device_type", "beacon");
 
             jsonObject.put("push_type", "location");
+            jsonObject.put("gateway_address",beacon.getGateway_address());
             jsonObject.put("x", beacon.getX());
             jsonObject.put("y",beacon.getY());
             jsonObject.put("map_key",beacon.getMap_key());
             jsonObject.put("last_time",beacon.getLastTime());
             jsonObject.put("address", beacon.getMac());
             jsonObject.put("project_key", beacon.getProject_key());
+
             id++;
             jsonObject.put("id", id);
             jsonObject.put("time", sdf.format(new Date()));
-            //  println("原始信标" + sdf.format(new Date()) + "Push" + "id=" + id);
+              println("位置推送666" + jsonObject);
             RabbitMessage rabbitMessage = new RabbitMessage();
             rabbitMessage.setMsg(jsonObject.toString());
             directExchangeProducer.send(rabbitMessage.toString(), Push);

@@ -446,7 +446,7 @@ public class CallBackHandlers implements Runnable {
                         Alarm_Sql alarm_sql = new Alarm_Sql();
                         alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_online,Alarm_object.beacon,gateway.getMap_key(),0,"", 0,0,"","Beacon",beacon.getMac(),beacon.getProject_key(),beacon.getLastTime()));
                     }
-                    StringUtil.sendBeaconPush_onOff(beacon,1);
+                  //  StringUtil.sendBeaconPush_onOff(beacon,1);
                     beacon.setLastTime(time);
                     beacon.setRssi(device.getRssi());
                     beacon.setGateway_address(gateway.getAddress());
@@ -532,7 +532,7 @@ public class CallBackHandlers implements Runnable {
 
 
                 }
-                else{
+                else if(bracelet!=null){
                     bracelet.setOnline(1);
                     bracelet.setLast_time(time);
                     bracelet.setRssi(device.getRssi());

@@ -17,13 +17,21 @@ public class Location implements Serializable {
   //  Area area;
     String name;
     int type = 3;
-
+    String gAddress;
     /*//参数定位的三个beacon设备的mac
     String iMac1;
     String iMac2;
     String iMac3;*/
     public Location() {
 
+    }
+
+    public void setgAddress(String gAddress) {
+        this.gAddress = gAddress;
+    }
+
+    public String getgAddress() {
+        return gAddress;
     }
 
     public void setDataMap(List<Gateway_device> dataMap) {
@@ -43,6 +51,7 @@ public class Location implements Serializable {
        // println("point.getX())"+this.y);
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");//设置日期格式
         this.mac = mac;
+        this.gAddress=point.getgAddress();
     }
 
     public void setType(int type) {

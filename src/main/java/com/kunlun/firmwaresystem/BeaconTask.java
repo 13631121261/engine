@@ -3,13 +3,14 @@ package com.kunlun.firmwaresystem;
 import com.google.gson.Gson;
 import com.kunlun.firmwaresystem.device.Gateway_devices;
 import com.kunlun.firmwaresystem.entity.*;
+import com.kunlun.firmwaresystem.entity.Record;
 import com.kunlun.firmwaresystem.entity.device.Device_offline;
 import com.kunlun.firmwaresystem.location_util.backup.Gateway_device;
 import com.kunlun.firmwaresystem.mappers.DeviceOfflineMapper;
 import com.kunlun.firmwaresystem.mqtt.RabbitMessage;
 import com.kunlun.firmwaresystem.sql.*;
 import com.kunlun.firmwaresystem.util.StringUtil;
-import net.sf.json.JSONObject;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import java.util.Map;
 import static com.kunlun.firmwaresystem.NewSystemApplication.*;
 import static com.kunlun.firmwaresystem.gatewayJson.Constant.*;
 import static com.kunlun.firmwaresystem.gatewayStatusTask.writeLog;
+import static com.kunlun.firmwaresystem.util.StringUtil.sendBeaconPush_Bt;
 import static java.lang.StrictMath.abs;
 
 @Component
@@ -71,34 +73,29 @@ public class BeaconTask {
                 if(check_sheet!=null){
                     linetime=check_sheet.getLine_time();
                     if(linetime==0){
-
                         linetime=3;
                     }
                 }
               if (thisTime - beacon.getLastTime() < linetime * 60L) {
-                   // println("信标在线");
+                    println("信标在线");
+                    sendBeaconPush_Bt(beacon,1);
                     StringUtil.sendBeaconPush_onOff(beacon, 1);
-                } else if(!beacon.isT()){
-                  {
-                      beacon.setT(true);
-                     // println("信标离线"+beacon.getMac());
-                      beacon.setRun(0);
-                      beacon.setBt(""+0);
-                      beacon.setGateway_address("/");
-                      beacon.setRssi(0);
-                      beacon.setSos(0);
-                      //  beacon.setOnline(0);
+                } else {       beacon.setT(true);
+                  // println("信标离线"+beacon.getMac());
+                  beacon.setRun(0);
+                  beacon.setBt(""+0);
+                  beacon.setGateway_address("/");
+                  beacon.setRssi(0);
+                  beacon.setSos(0);
+                  //  beacon.setOnline(0);
                    /* if (beacon.getOnline() != 0) {
                         StringUtil.saveRecord(beacon.getMac(), beacon.getLastTime(), beacon.getUser_key(), 2, 0,beacon.getProject_key());
                     }*/
-
-
-                      // StringUtil.saveRecord(gateway.getAddress(),gateway.getLasttime(),gateway.getUser_key(),1,1,gateway.getProject_key());
+                  // StringUtil.saveRecord(gateway.getAddress(),gateway.getLasttime(),gateway.getUser_key(),1,1,gateway.getProject_key());
+                  StringUtil.sendBeaconPush_onOff(beacon, 0);
+                  if(!beacon.isT()){
                       Alarm_Sql alarm_sql = new Alarm_Sql();
                       alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_offline,Alarm_object.beacon,beacon.getMap_key(),0,"", 0,0,"","Beacon",beacon.getMac(),beacon.getProject_key(),beacon.getLastTime()));
-
-                      StringUtil.sendBeaconPush_onOff(beacon, 0);
-
                   }
               }
                 beacon_sql.update(beaconMapper, beacon);
