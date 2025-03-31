@@ -65,12 +65,7 @@ public class LocationUtil {
             if (dataList.size() == 0) {
                     println("出现了定位周期内，此网关没有扫描到设备的情况，按理说不可能");
             } else {
-                //计算信号平均值
-              /*  for (Gateway_device data : dataList) {
-                    rssi = data.getRssi() + rssi;
-                }
-              rssi = rssi / dataList.size();*/
-                //取最大信号
+
                 rssi=-100;
                 for (Gateway_device data : dataList) {
                   if(data.getRssi()>rssi){
@@ -78,32 +73,31 @@ public class LocationUtil {
                       rssi=data.getRssi();
                   }
                 }
-               // println(dataList.get(0).getgAddress() + "累计收到次数=" + dataList.size());
-                //增加信号过滤
 
-
-            //    println(no+"   信号强度值"+rssi);
-                //
-
-                //println(dataList.get(0).getName()+ "累计收到次数=" + dataList.size());
-                //使用最强信号值
-                    /*int d=0;
-                    for(int j=1;j<dataList.size();j++){
-
-                        if(dataList.get(j).getRssi()>dataList.get(d).getRssi()){
-                            d=j;
-                        }
-                    }
-                    rssi=dataList.get(d).getRssi();*/
-                if (rssi>=-85) {
+                if (rssi>=-100) {
                     Gateway_device data = dataList.get(0);
                     //  println(dataList.get(0).getName()+ "信号=" + rssi);
                     data.setRssi(rssi);
                     list.add(data);
                 }
-
             }
         }
+
+        for(int i=list.size()-1;i>=0;i--){
+            println("循环次数="+i);
+            if(i>=1){
+                if(list.get(i).getRssi()<list.get(i-1).getRssi()){
+                    println("删除i="+i);
+                    list.remove(i);
+                }else{
+                    list.remove(i-1);
+                    println("删除i="+(i-1));
+                }
+            }
+
+
+        }
+        println("定位长度="+list.size());
         //
         if(list.size()==1){
         //    println("只有一个网关"+list.get(0).getX());

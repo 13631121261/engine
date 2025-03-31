@@ -110,6 +110,22 @@ String ss="path=" +dd.replaceAll(":","12471");
         byte v=(byte)0xC8;
       //  v=(byte)(v|(byte)0x01);
         println(""+v);
+
+
+
+        byte[] data1 = { (byte) 0xFF, (byte) 0x8D };
+        int result1 = parseSigned12BitBE(data1, 0);
+        System.out.println(result1); // 输出: -1793
+
+        // 示例 2：输入 0x07, 0xFF，输出 +2047
+        byte[] data2 = { 0x07, (byte) 0xFF };
+        int result2 = parseSigned12BitBE(data2, 0);
+        System.out.println(result2); // 输出: 2047
+
+        // 示例 3：输入 0x08, 0x00，输出 -2048
+        byte[] data3 = { 0x08, 0x00 };
+        int result3 = parseSigned12BitBE(data3, 0);
+        System.out.println(result3); // 输出: -2048
     }
     //zeng929620555
 
@@ -117,6 +133,40 @@ String ss="path=" +dd.replaceAll(":","12471");
     //0x1F19
 
 
+        /**
+         * 将两个字节解析为 12 位有符号整数（大端序）
+         * @param byte1 高位字节（必须为无符号值 0~255）
+         * @param byte2 低位字节（必须为无符号值 0~255）
+         * @return 带符号的整数值
+         */
+        public static int parseSigned12BitBE(int byte1, int byte2) {
+            // 合并为大端序 16 位整数
+            int combined = (byte1 << 8) | byte2;
+
+            // 提取高 12 位（右移 4 位，丢弃低 4 位）
+            int value = combined >> 4;
+
+            // 符号扩展：若最高位为 1（负数），填充高 4 位为 1
+            if ((value & 0x800) != 0) { // 0x800 = 0b1000_0000_0000
+                value |= 0xF000;        // 0xF000 = 0b1111_0000_0000_0000
+            }
+
+            // 转换为 16 位有符号整数（Java 中需强制转换）
+            return (short) value;
+        }
+
+        /**
+         * 从字节数组中解析数据
+         * @param bytes 字节数组（至少包含两个字节）
+         * @param offset 起始偏移量
+         * @return 带符号的整数值
+         */
+        public static int parseSigned12BitBE(byte[] bytes, int offset) {
+            // 将字节转换为无符号整数（0~255）
+            int byte1 = bytes[offset] & 0xFF;     // 高位字节
+            int byte2 = bytes[offset + 1] & 0xFF; // 低位字节
+            return parseSigned12BitBE(byte1, byte2);
+        }
 
 
 

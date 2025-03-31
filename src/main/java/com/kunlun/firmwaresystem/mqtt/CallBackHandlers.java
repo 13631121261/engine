@@ -426,7 +426,6 @@ public class CallBackHandlers implements Runnable {
                 //println(""+gateway);
                 RabbitMessage rabbitMessage1 = new RabbitMessage(gateway.getPub_topic(), "",gateway.getProject_key());
                 directExchangeProducer.send(rabbitMessage1.toString(), "mqtt_topic");
-
                 break;
         }
     }
@@ -578,6 +577,67 @@ public class CallBackHandlers implements Runnable {
 
                         bracelet.setSos(btdata[24]&0xff);
                         bracelet.setBt(btdata[25]&0xff);
+                        Tag_log tagLog=new Tag_log();
+                        tagLog.setBeacon_address(bracelet.getMac());
+                        tagLog.setGateway_address(gateway.getAddress());
+                        tagLog.setCreate_time(time);
+                        tagLog.setProject_key(bracelet.getProject_key());
+                        tagLog.setKeys1(bracelet.getSos());
+                        tagLog.setRun(-1);
+                        tagLog.setBt(bracelet.getBt()+"%");
+                        tagLog.setGateway_name(gateway.getName());
+                        tagLog.setRssi(bracelet.getRssi());
+                        tagLog.setType(bracelet.getType()+"");
+                        //  println("log="+tagLog);
+                        tagLogSql.addLog(NewSystemApplication.tagLogMapper,tagLog);
+                    }
+                   else if(device.getAdv_raw().startsWith("020105040959543916FF")){
+                        //02 01 06 17 FF 00 01 5F 16 00 02 87 02 7B 52 00 00 48 0D 00 00 3F 0E 5A 00 14 01 03 09 43 32
+                        byte[] btdata = StringUtil.hexToByteArr(device.getAdv_raw());
+//                        byte[] btdata = StringUtil.hexToByteArr("02010617FF00015F16000287027B520000480D00003F0E5A00140103094332");
+                        int c=(btdata[15]&0xff)*256;
+                        int d=btdata[16]&0xff;
+                        int e=c+d;
+                        if(e!=0){
+                            bracelet.setSteps(e);
+                        }
+                        int c1=(btdata[17]&0xff)*256;
+                        int d1=btdata[18]&0xff;
+                        int e1=c1+d1;
+                        if(e1!=0){
+                            bracelet.setCalorie(e1);
+                        }
+                        if((btdata[19]&0xff)>0){
+                            bracelet.setHeart_rate(btdata[19]&0xff);
+                        }
+                        bracelet.setBt(btdata[22]&0xff);
+                        bracelet.setSos(btdata[23]&0xff);
+
+
+                        if((btdata[29]&0xff)!=0){
+                            bracelet.setSpo(btdata[29]&0xff);
+                            println("血氧");
+                        }
+                        else{
+                            println("没有血氧");
+                        }
+
+
+
+
+/*
+
+
+                        double a=(btdata[22]&0xff)*256.00;
+                        double b=btdata[21]&0xff;
+                        String t=(a+b)/100.00+"";
+                        if(t.length()>3){
+                            bracelet.setTemp(t);
+                        }
+*/
+
+
+
                         Tag_log tagLog=new Tag_log();
                         tagLog.setBeacon_address(bracelet.getMac());
                         tagLog.setGateway_address(gateway.getAddress());
