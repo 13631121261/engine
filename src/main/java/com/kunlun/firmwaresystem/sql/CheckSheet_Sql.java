@@ -37,6 +37,17 @@ public class CheckSheet_Sql {
 
         return hashMap;
     }
+    public Check_sheet getCheckSheet(CheckSheetMapper checkSheetMapper,String project_key){
+        LambdaQueryWrapper<Check_sheet> userLambdaQueryWrapper = Wrappers.lambdaQuery();
+        userLambdaQueryWrapper.eq(Check_sheet::getProject_key,project_key);
+        List<Check_sheet> check_sheets=checkSheetMapper.selectList(userLambdaQueryWrapper);
+        if (check_sheets.size()>0&&check_sheets.size()==1){
+            return check_sheets.get(0);
+        }else {
+            return null;
+        }
+
+    }
 /* public Check_sheet getCheckSheet(CheckSheetMapper checkSheetMapper,String userkey){
      LambdaQueryWrapper<Check_sheet> userLambdaQueryWrapper = Wrappers.lambdaQuery();
      userLambdaQueryWrapper.eq(Check_sheet::getUserkey,userkey);

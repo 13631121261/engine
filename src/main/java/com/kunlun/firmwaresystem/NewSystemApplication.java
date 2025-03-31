@@ -104,7 +104,7 @@ public class NewSystemApplication {
     public static DeviceP_recordMapper devicePRecordMapper;
 
 
-    public static Map<String,Check_sheet> check_sheetMap;
+    //public static Map<String,Check_sheet> check_sheetMap;
     public static CheckSheetMapper checkSheetMapper;
     public static CheckRecordMapper checkRecordMapper;
     public static CustomerMapper customerMapper;
@@ -232,7 +232,7 @@ public class NewSystemApplication {
         Customer_sql customer_sql = new Customer_sql();
         customerMap = customer_sql.getAllCustomer(customerMapper);
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
-        check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
+       // check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
 
 
 

@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    username: root
-    password: qaz741
-    url: jdbc:mysql://localhost:9906/engine?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true
+    username: MAC-7866E6
+    password: 741852
+    url: jdbc:mysql://192.168.1.10:9906/engine?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&allowMultiQueries=true
   mvc:
    hiddenmethod:
     filter:

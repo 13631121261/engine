@@ -51,9 +51,7 @@ public class DirectExchangeConsumer {
     @RabbitListener(queues = "sendToGateway")
     @RabbitHandler
     public void getQueue1Message(String msg) {
-            if (NewSystemApplication.check_sheetMap == null) {
-                return;
-            }
+
           /*  for (Map.Entry<String, MyMqttClient> entry : myMqttClientMap.entrySet()) {
                 myMqttClient1= entry.getValue();
                // println("key="+entry.getKey());
@@ -223,26 +221,24 @@ public class DirectExchangeConsumer {
         JSONObject jsonObject1=new JSONObject();
         jsonObject1.put("data",device);
         String data=jsonObject1.toString();
-        if(!project_key.isEmpty()&&check_sheetMap!=null){
-            Check_sheet check_sheet= check_sheetMap.get(project_key);
-            if(check_sheet!=null){
-                int type=check_sheet.getRelay_type();
-                System.out.println("转发===="+type);
-                if(type==0){
+        //if(!project_key.isEmpty()&&check_sheetMap!=null){
+         //   Check_sheet check_sheet= check_sheetMap.get(project_key);
+           // if(check_sheet!=null){
+
+             /*   if(type==0){
                     sendUdp(data,check_sheet.getUdp(),check_sheet.getR_port());
                 }else if(type==1){
                 //    println("MQTT");
                     if(client==null){
                         return;
                     }
-
+*/
                     if(client!=null&&client.getStatus()){
-                        println("推送开始"+check_sheet.getR_pub());
                         client.sendToTopic("location_engine",JSONObject.toJSONString(device),1);
                     }
-                }
-            }
-        }
+              //  }
+         //   }
+        //}
     }
     private void sendUdp(String raw, String address, int port) {
         try {

@@ -68,14 +68,10 @@ public class BeaconTask {
                     continue;
                 }
                 //println("333");
-                Check_sheet check_sheet=check_sheetMap.get(beacon.getProject_key());
+            //    Check_sheet check_sheet=check_sheetMap.get(beacon.getProject_key());
                 int linetime=3;
-                if(check_sheet!=null){
-                    linetime=check_sheet.getLine_time();
-                    if(linetime==0){
-                        linetime=3;
-                    }
-                }
+
+
               if (thisTime - beacon.getLastTime() < linetime * 60L) {
                     println("信标在线");
                     sendBeaconPush_Bt(beacon,1);
@@ -126,17 +122,8 @@ public class BeaconTask {
                     bracelet.setLast_time(-28800);
                     continue;
                 }
-                //println("333");
-                Check_sheet check_sheet=check_sheetMap.get(bracelet.getProject_key());
+
                 int linetime=3;
-                if(check_sheet!=null){
-                    linetime=check_sheet.getLine_time();
-                    if(linetime==0){
-
-                        linetime=3;
-                    }
-                }
-
 
                 if (thisTime - bracelet.getLast_time() < linetime * 60L) {
                     bracelet.setOnline(1);

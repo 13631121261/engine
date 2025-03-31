@@ -126,6 +126,9 @@ String ss="path=" +dd.replaceAll(":","12471");
         byte[] data3 = { 0x08, 0x00 };
         int result3 = parseSigned12BitBE(data3, 0);
         System.out.println(result3); // 输出: -2048
+        for(int j=0;j<3;j++){
+            System.out.println(j);
+        }
     }
     //zeng929620555
 

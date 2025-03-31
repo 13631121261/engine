@@ -1081,7 +1081,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
                check_sheet.setCreatetime(System.currentTimeMillis()/1000);
                CheckSheet_Sql sheetSql=new CheckSheet_Sql();
                sheetSql.addCheck_sheet(checkSheetMapper,check_sheet);
-               check_sheetMap=sheetSql.getCheckSheet(checkSheetMapper);
+             //  check_sheetMap=sheetSql.getCheckSheet(checkSheetMapper);
                response=JsonConfig.getJsonObj(CODE_OK,"OK",lang);
            }
         }
@@ -2503,7 +2503,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         //check_sheet
         Customer customer=getCustomer(request);
         String lang=customer.getLang();
-        Check_sheet check_sheet=check_sheetMap.get(customer.getUserkey());
+        Check_sheet check_sheet=new CheckSheet_Sql().getCheckSheet(checkSheetMapper,customer.getProject_key());
                 String response=getJson(CODE_OK,check_sheet,lang);
         return response;
     }
@@ -2512,7 +2512,7 @@ private void getMenu(Menu_Sql menu_sql,int p_id,  List<Integer> ids){
         //check_sheet
         Customer customer=getCustomer(request);
         String lang=customer.getLang();
-        Check_sheet check_sheet=check_sheetMap.get(customer.getUserkey());
+        Check_sheet check_sheet=new CheckSheet_Sql().getCheckSheet(checkSheetMapper,customer.getUserkey());
 
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper,check_sheet);

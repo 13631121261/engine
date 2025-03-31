@@ -261,8 +261,8 @@ public class StringUtil {
         }
         println("进行在线或者离线检测"+beacon.getMac()+"======="+status);
       //  if (beacon.getOnline() != status) {
-            Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
-            if (check_sheet !=null) {
+      //      Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
+            //if (check_sheet !=null) {
                 beacon.setOnline(status);
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("device_type", "beacon");
@@ -284,7 +284,7 @@ public class StringUtil {
                 rabbitMessage.setMsg(jsonObject.toString());
                 directExchangeProducer.send(rabbitMessage.toString(), Push);
            // }
-        }
+       // }
     }
     public static void sendBeaconPush_Bt(Beacon beacon, int status) {
         //  println("--------------12");
@@ -389,8 +389,8 @@ public class StringUtil {
             return;
         }
 
-        Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
-        if (check_sheet !=null) {
+       // Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
+        //if (check_sheet !=null) {
             JSONObject jsonObject = new JSONObject();
             jsonObject.put("device_type", "beacon");
 
@@ -410,21 +410,45 @@ public class StringUtil {
             RabbitMessage rabbitMessage = new RabbitMessage();
             rabbitMessage.setMsg(jsonObject.toString());
             directExchangeProducer.send(rabbitMessage.toString(), Push);
-        }
+        //}
 
     }
     //给第三方推送位置信息
+    public static void sendLocationPush_Bracelet(Bracelet bracelet) {
+        //  println("--------------12");
+        if (bracelet.getUser_key() == null) {
+            return;
+        }
+      //  Check_sheet check_sheet = check_sheetMap.get(bracelet.getProject_key());
+      //  if (check_sheet !=null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("device_type", "bracelet");
+            jsonObject.put("push_type", "location");
+            jsonObject.put("x", bracelet.getX());
+            jsonObject.put("y",bracelet.getY());
+            jsonObject.put("map_key",bracelet.getMap_key());
+            jsonObject.put("last_time",bracelet.getLast_time());
+            jsonObject.put("address", bracelet.getMac());
+            jsonObject.put("project_key", bracelet.getProject_key());
+            id++;
+            jsonObject.put("id", id);
+            jsonObject.put("time", sdf.format(new Date()));
+            //  println("原始信标" + sdf.format(new Date()) + "Push" + "id=" + id);
+            RabbitMessage rabbitMessage = new RabbitMessage();
+            rabbitMessage.setMsg(jsonObject.toString());
+            directExchangeProducer.send(rabbitMessage.toString(), Push);
+       // }
+
+    }
     public static void sendLocationPush_OFcat1(FWordcard fWordcard) {
         //  println("--------------12");
         if (fWordcard.getUser_key() == null) {
             return;
         }
-
-        Check_sheet check_sheet = check_sheetMap.get(fWordcard.getProject_key());
-        if (check_sheet !=null) {
+       // Check_sheet check_sheet = check_sheetMap.get(fWordcard.getProject_key());
+       // if (check_sheet !=null) {
             JSONObject jsonObject = new JSONObject();
-            jsonObject.put("device_type", "beacon");
-
+            jsonObject.put("device_type", "OFcat1");
             jsonObject.put("push_type", "location");
             jsonObject.put("x", fWordcard.getX());
             jsonObject.put("y",fWordcard.getY());
@@ -439,12 +463,38 @@ public class StringUtil {
             RabbitMessage rabbitMessage = new RabbitMessage();
             rabbitMessage.setMsg(jsonObject.toString());
             directExchangeProducer.send(rabbitMessage.toString(), Push);
-        }
+      //  }
 
     }
 
 
+    //给第三方推送位置信息
+    public static void sendLocationPush_(FWordcard fWordcard) {
+        //  println("--------------12");
+        if (fWordcard.getUser_key() == null) {
+            return;
+        }
+        //Check_sheet check_sheet = check_sheetMap.get(fWordcard.getProject_key());
+       // if (check_sheet !=null) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("device_type", "beacon");
+            jsonObject.put("push_type", "location");
+            jsonObject.put("x", fWordcard.getX());
+            jsonObject.put("y",fWordcard.getY());
+            jsonObject.put("map_key",fWordcard.getMap_key());
+            jsonObject.put("last_time",fWordcard.getLastTime());
+            jsonObject.put("address", fWordcard.getMac());
+            jsonObject.put("project_key", fWordcard.getProject_key());
+            id++;
+            jsonObject.put("id", id);
+            jsonObject.put("time", sdf.format(new Date()));
+            //  println("原始信标" + sdf.format(new Date()) + "Push" + "id=" + id);
+            RabbitMessage rabbitMessage = new RabbitMessage();
+            rabbitMessage.setMsg(jsonObject.toString());
+            directExchangeProducer.send(rabbitMessage.toString(), Push);
+        //}
 
+    }
 
     //给地图推送位置
     public static void sendTagPush(ArrayList<Object> devicep, String map_key ) {

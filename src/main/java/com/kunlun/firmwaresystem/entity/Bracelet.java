@@ -1,5 +1,7 @@
 package com.kunlun.firmwaresystem.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+
 public class Bracelet {
     int id;
     String   mac;
@@ -22,6 +24,26 @@ public class Bracelet {
     String customer_key;
     int rssi=0;
     int calorie=0;
+    @TableField(exist = false)
+    double x;
+    @TableField(exist = false)
+    double y;
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public double getX() {
+        return x;
+    }
 
     public void setCalorie(int calorie) {
         this.calorie = calorie;
@@ -192,5 +214,34 @@ public class Bracelet {
     }
     public Bracelet(String mac){
         this.mac=mac;
+    }
+
+    @Override
+    public String toString() {
+        return "Bracelet{" +
+                "id=" + id +
+                ", mac='" + mac + '\'' +
+                ", heart_rate=" + heart_rate +
+                ", steps=" + steps +
+                ", spo=" + spo +
+                ", temp='" + temp + '\'' +
+                ", type=" + type +
+                ", online=" + online +
+                ", user_key='" + user_key + '\'' +
+                ", project_key='" + project_key + '\'' +
+                ", map_key='" + map_key + '\'' +
+                ", is_bind=" + is_bind +
+                ", idcard='" + idcard + '\'' +
+                ", person_name='" + person_name + '\'' +
+                ", bt=" + bt +
+                ", sos=" + sos +
+                ", create_time=" + create_time +
+                ", last_time=" + last_time +
+                ", customer_key='" + customer_key + '\'' +
+                ", rssi=" + rssi +
+                ", calorie=" + calorie +
+                ", x=" + x +
+                ", y=" + y +
+                '}';
     }
 }

@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static com.kunlun.firmwaresystem.NewSystemApplication.checkSheetMapper;
-import static com.kunlun.firmwaresystem.NewSystemApplication.check_sheetMap;
+//import static com.kunlun.firmwaresystem.NewSystemApplication.check_sheetMap;
 
 public class Project_Sql {
     public boolean addProject(ProjectMapper projectMapper, Project project) {
@@ -43,7 +43,7 @@ public class Project_Sql {
 
            List<Check_sheet> check_sheets= checkSheetMapper.selectList(null);
            for(Check_sheet check_sheet1:check_sheets){
-               check_sheetMap.put(check_sheet1.getProject_key(),check_sheet);
+              // check_sheetMap.put(check_sheet1.getProject_key(),check_sheet);
            }
             return true;
         }

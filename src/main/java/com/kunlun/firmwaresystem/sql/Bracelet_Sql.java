@@ -55,7 +55,6 @@ public class Bracelet_Sql {
         List<Bracelet> beacons = braceletMapper.selectList(userLambdaQueryWrapper);
         HashMap<String, Bracelet> beaconHashMap = new HashMap<>();
         for (Bracelet beacon : beacons) {
-            //println("初始化"+gateway.getSub_topic()+"==="+gateway.getPub_topic());
             beaconHashMap.put(beacon.getMac(), beacon);
         }
         return beaconHashMap;

@@ -104,4 +104,16 @@ public class Btag_Sql {
         } else
             return null;
     }
+    public Beacon_tag getOneByMinor(BTagMapper bTagMapper,int minor,String project_key) {
+        QueryWrapper<Beacon_tag> queryWrapper = Wrappers.query();
+        queryWrapper.eq("project_key", project_key);
+        queryWrapper.eq("minor", minor);
+        // queryWrapper.eq("username", user.getCustomername());
+//若是数据库中符合传入的条件的记录有多条，那就不能用这个方法，会报错
+        List<Beacon_tag> a = bTagMapper.selectList(queryWrapper);
+        if (a != null && a.size() ==1) {
+            return a.get(0);
+        } else
+            return null;
+    }
 }

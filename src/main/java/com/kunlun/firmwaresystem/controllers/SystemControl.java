@@ -47,7 +47,7 @@ public class SystemControl {
         JSONObject jsonObject= JsonConfig.getJsonObj(JsonConfig.CODE_OK,"",customer.getLang());
         CheckSheet_Sql checkSheet_sql=new CheckSheet_Sql();
         checkSheet_sql.update(checkSheetMapper,check_sheet);
-        check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
+       // check_sheetMap=checkSheet_sql.getCheckSheet(checkSheetMapper);
        /* new Thread(new Runnable() {
             @Override
             public void run() {
@@ -103,9 +103,9 @@ public class SystemControl {
     }
     @RequestMapping(value = "/userApi/SystemGet", method = RequestMethod.GET, produces = "application/json")
     public JSONObject SystemGet(HttpServletRequest request) {
-        Customer customer=getCustomer(request);
+     /*   Customer customer=getCustomer(request);
         println(customer.getProject_key());
-        println("SystemGet"+check_sheetMap);
+       // println("SystemGet"+check_sheetMap);
        Check_sheet check_sheet= check_sheetMap.get(customer.getProject_key());
         JSONObject jsonObject= JsonConfig.getJsonObj(JsonConfig.CODE_OK,check_sheet,customer.getLang());
         try{
@@ -113,8 +113,8 @@ public class SystemControl {
             jsonObject.put("mqtt_status",status);
         } catch (RuntimeException e) {
             jsonObject.put("mqtt_status",false);
-        }
-        return jsonObject;
+        }*/
+        return null;
     }
 
     @RequestMapping(value = "/userApi/setDownloadUrl", method = RequestMethod.GET, produces = "application/json")
@@ -139,7 +139,8 @@ public class SystemControl {
             jsonObject1.put("msg", CODE_OK_txt);
             return jsonObject1;
         }
-        Check_sheet check_sheet=check_sheetMap.get(customer.getProject_key());
+        CheckSheet_Sql checkSheetSql=new CheckSheet_Sql();
+        Check_sheet check_sheet=checkSheetSql.getCheckSheet(checkSheetMapper,customer.getProject_key());
         if(check_sheet!=null){
             check_sheet.setIntervals( com.kunlun.firmwaresystem.getLocationTask.interval);
         }else{
@@ -150,7 +151,7 @@ public class SystemControl {
         }
         CheckSheet_Sql sheetSql=new CheckSheet_Sql();
         sheetSql.update(checkSheetMapper,check_sheet);
-        check_sheetMap=sheetSql.getCheckSheet(checkSheetMapper);
+
         JSONObject jsonObject1 = new JSONObject();
         jsonObject1.put("code", CODE_OK);
         jsonObject1.put("msg", CODE_OK_txt);

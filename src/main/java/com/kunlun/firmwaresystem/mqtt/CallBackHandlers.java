@@ -556,9 +556,6 @@ public class CallBackHandlers implements Runnable {
                         if(e1!=0){
                             bracelet.setCalorie(e1);
                         }
-
-
-
                         int c=(btdata[20]&0xff)*256;
                         int d=btdata[19]&0xff;
                         int e=c+d;
@@ -574,7 +571,6 @@ public class CallBackHandlers implements Runnable {
                         if((btdata[23]&0xff)>0){
                             bracelet.setHeart_rate(btdata[23]&0xff);
                         }
-
                         bracelet.setSos(btdata[24]&0xff);
                         bracelet.setBt(btdata[25]&0xff);
                         Tag_log tagLog=new Tag_log();
@@ -621,23 +617,6 @@ public class CallBackHandlers implements Runnable {
                         else{
                             println("没有血氧");
                         }
-
-
-
-
-/*
-
-
-                        double a=(btdata[22]&0xff)*256.00;
-                        double b=btdata[21]&0xff;
-                        String t=(a+b)/100.00+"";
-                        if(t.length()>3){
-                            bracelet.setTemp(t);
-                        }
-*/
-
-
-
                         Tag_log tagLog=new Tag_log();
                         tagLog.setBeacon_address(bracelet.getMac());
                         tagLog.setGateway_address(gateway.getAddress());
@@ -652,11 +631,60 @@ public class CallBackHandlers implements Runnable {
                         //  println("log="+tagLog);
                         tagLogSql.addLog(NewSystemApplication.tagLogMapper,tagLog);
                     }
+                   else if(device.getAdv_raw().startsWith("02010617FF0002")){
+                                        //000139 00C858 0000FF 03000000000000010B201A03094332
+                        println(device.getAdv_raw());
+                        Btag_Sql btag=new Btag_Sql();
+                        byte[] btdata = StringUtil.hexToByteArr(device.getAdv_raw());
+                        ArrayList<Gateway_device> beaconTags=new ArrayList<>();
+                        for(int i=0;i<3;i++){
+
+                            println(String.valueOf((btdata[(i*3)+7]&0xff)*256));
+
+                            int minor=((btdata[(i*3)+7]&0xff)*256)+(btdata[(i*3)+8]&0xff);
+                            int rssi=-btdata[(i*3)+9];
+                            if(rssi==-255||rssi==255||rssi==1||rssi==-1){
+                               continue;
+                            }
+                            println("address="+bracelet.getMac()+"    Minor="+minor);
+                            Beacon_tag beaconTag= btag.getOneByMinor(bTagMapper,minor,bracelet.getProject_key());
+                            if(beaconTag!=null){
+                                println("beacon_tag="+beaconTag);
+                                beaconTag.setOnline(1);
+                                beaconTag.setLast_time(System.currentTimeMillis()/1000);
+                                bTagMapper.updateById(beaconTag);
+                                // String a=wordCardhashMap.get(channelHandlerContext);
+                                Gateway_device gatewayDevice=new Gateway_device(beaconTag.getMajor()+":"+minor,bracelet.getMac(),rssi,beaconTag.getX(),beaconTag.getY(),System.currentTimeMillis()/1000,beaconTag.getMap_key(),-51,2.67,0,1);
+                                beaconTags.add(gatewayDevice);
+                                ///println("熟组="+beaconTags);
+                                Tag_log tagLog=new Tag_log();
+                                tagLog.setBeacon_address(bracelet.getMac());
+                                tagLog.setGateway_address(beaconTag.getMajor()+":"+beaconTag.getMinor());
+                                tagLog.setCreate_time(System.currentTimeMillis()/1000);
+                                tagLog.setProject_key(bracelet.getProject_key());
+                                tagLog.setKeys1(bracelet.getSos());
+                                //   tagLog.setRun(fWordcard.getRun());
+                                tagLog.setBt(bracelet.getBt()+"");
+                                tagLog.setGateway_name(beaconTag.getName());
+                                tagLog.setRssi(rssi);
+                                tagLog.setType("");
+                                //  println("log="+tagLog);
+                                TagLogSql tagLogSql=new TagLogSql();
+                                println("插入原始数据 ");
+                                tagLogSql.addLog(NewSystemApplication.tagLogMapper,tagLog);
+
+                            }
+                        }
+                        if (!beaconTags.isEmpty()) {
+                            println("原始的log="+beaconTags);
+                            redisUtil.set(redis_key_device_gateways + bracelet.getMac(),beaconTags);
+                        }
+                        }
+
+                    }
                 }
-                /*if(gateway.getAddress().equals("f6938f3bfc57")){
-                    println("fff收到这个设备=f6938f3bfc57");
-                }*/
-            }
+
+
     }
     private void WordCardHandle(Gateway gateway, Scan_report_data scan_report_data) {
         Scan_report_data_info[] scanReportDataInfos = scan_report_data.getDev_infos();
@@ -1375,8 +1403,8 @@ public class CallBackHandlers implements Runnable {
                         "\"cmd\":\"sys_app_server\",\n" +
                         "\"op\":\"set\",\n" +
                         "\"type\":\"MQTT\",\n" +
-                        "\"port\":"+check_sheetMap.get(gatewayConfig.getProject_key()).getPort()+",\n" +
-                        "\"host\":\"" + check_sheetMap.get(gatewayConfig.getProject_key()).getHost()+ "\",\n" +
+                        "\"port\":"+"1883"+",\n" +
+                        "\"host\":\"" + "120.77.232.76"+ "\",\n" +
                         "\"mqtt\":{\n" +
                         "\"pub\":\"" + pub + "\",\n" +
                         "\"sub\":\"" + sub  + "\",\n" +
