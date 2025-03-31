@@ -243,7 +243,7 @@ public class NewSystemApplication {
           public void run() {
               Map_Sql map_sql=new Map_Sql();
               map_sql.getAllMap(mapMapper,redisUtil);
-              client = new MyMqttClient("120.77.232.76",1883,"asd","location_engine",0,"","","");
+              client = new MyMqttClient("192.168.1.10",1883,"asd","location_engine",0,"","","");
               client.start();
            //   myMqttClientMap=new HashMap<>();
          //     t_myMqttClientMap=new HashMap<>();
