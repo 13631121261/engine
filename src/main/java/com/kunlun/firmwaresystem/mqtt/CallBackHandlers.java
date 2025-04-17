@@ -541,14 +541,12 @@ public class CallBackHandlers implements Runnable {
                         byte[] btdata = StringUtil.hexToByteArr(device.getAdv_raw());
 //                        byte[] btdata = StringUtil.hexToByteArr("02010617FF00015F16000287027B520000480D00003F0E5A00140103094332");
 
-                        println("血氧="+(btdata[7]&0xff));
+                        //println("血氧="+(btdata[7]&0xff));
                         if((btdata[7]&0xff)!=0){
                             bracelet.setSpo(btdata[7]&0xff);
-                            println("油纸");
+                         //   println("油纸");
                         }
-                        else{
-                            println("物质");
-                        }
+
 
                         int c1=(btdata[16]&0xff)*256;
                         int d1=btdata[15]&0xff;
@@ -612,10 +610,10 @@ public class CallBackHandlers implements Runnable {
 
                         if((btdata[29]&0xff)!=0){
                             bracelet.setSpo(btdata[29]&0xff);
-                            println("血氧");
+                           // println("血氧");
                         }
                         else{
-                            println("没有血氧");
+                            //println("没有血氧");
                         }
                         Tag_log tagLog=new Tag_log();
                         tagLog.setBeacon_address(bracelet.getMac());
@@ -633,7 +631,7 @@ public class CallBackHandlers implements Runnable {
                     }
                    else if(device.getAdv_raw().startsWith("02010617FF0002")){
                                         //000139 00C858 0000FF 03000000000000010B201A03094332
-                        println(device.getAdv_raw());
+                      //  println(device.getAdv_raw());
                         Btag_Sql btag=new Btag_Sql();
                         byte[] btdata = StringUtil.hexToByteArr(device.getAdv_raw());
                         ArrayList<Gateway_device> beaconTags=new ArrayList<>();
@@ -646,7 +644,7 @@ public class CallBackHandlers implements Runnable {
                             if(rssi==-255||rssi==255||rssi==1||rssi==-1){
                                continue;
                             }
-                            println("address="+bracelet.getMac()+"    Minor="+minor);
+                         //   println("address="+bracelet.getMac()+"    Minor="+minor);
                             Beacon_tag beaconTag= btag.getOneByMinor(bTagMapper,minor,bracelet.getProject_key());
                             if(beaconTag!=null){
                                 println("beacon_tag="+beaconTag);
@@ -670,13 +668,13 @@ public class CallBackHandlers implements Runnable {
                                 tagLog.setType("");
                                 //  println("log="+tagLog);
                                 TagLogSql tagLogSql=new TagLogSql();
-                                println("插入原始数据 ");
+                               // println("插入原始数据 ");
                                 tagLogSql.addLog(NewSystemApplication.tagLogMapper,tagLog);
 
                             }
                         }
                         if (!beaconTags.isEmpty()) {
-                            println("原始的log="+beaconTags);
+                           // println("原始的log="+beaconTags);
                             redisUtil.set(redis_key_device_gateways + bracelet.getMac(),beaconTags);
                         }
                         }

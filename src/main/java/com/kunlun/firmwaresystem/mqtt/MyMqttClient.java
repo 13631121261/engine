@@ -119,6 +119,7 @@ public class MyMqttClient {
             }
           //  addSubTopic("/cle/mqtt");
             addSubTopic("GwData");
+            addSubTopic("GwData12");
             addSubTopic("AlphaRsp");
             addSubTopic("connected");
             addSubTopic("disconnected");

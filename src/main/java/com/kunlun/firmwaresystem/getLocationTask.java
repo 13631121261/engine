@@ -464,15 +464,13 @@ public class getLocationTask {
                 for (String address : braceletsMap.keySet()) {
 
                     Bracelet bracelet = braceletsMap.get(address);
-                    println(project.getProject_key() + "手环=" + bracelet);
+                   // println(project.getProject_key() + "手环=" + bracelet);
                     if (bracelet != null && bracelet.getProject_key().equals(project.getProject_key())) {
                         //   println("331数据="+fWordcard);
 
                         try {
 
                             Object o = redisUtil.get(redis_key_device_gateways + address);
-
-
                             if (o != null) {
                                 if (o.getClass().getName().contains("String")) {
                                     System.out.println("O=异常=" + ((String) o));
@@ -480,11 +478,11 @@ public class getLocationTask {
 
                                 beaconTags = (ArrayList<Gateway_device>) o;
                             } else {
-                                println("手环为何会退出=" + address);
+                              //  println("手环为何会退出=" + address);
                                 continue;
                             }
-                            println("1数据=" + beaconTags);
-                            println("1数据2=" + beaconTags.size());
+                            //println("1数据=" + beaconTags);
+                          //  println("1数据2=" + beaconTags.size());
                             if (beaconTags.isEmpty()) {
                                 continue;
                             }
