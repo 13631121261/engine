@@ -56,7 +56,8 @@ public class gatewayStatusTask {
                 firstTime=0;
             }
             //println("网关="+key+"  时间差="+(now-last)/1000);
-            if ((now - last) > 30) {
+            if ((now - last) >60) {
+              //  println("离线时间="+now+"    "+last+"///"+gateway.getAddress());
                 long onLineTime = last - firstTime;
                 //   redisUtil.set(redis_key_gateway_onLine_time_count+gateway.getAddress(),onLineTime/1000);
                 gateway.setOnlinetime(onLineTime );
@@ -73,13 +74,14 @@ public class gatewayStatusTask {
                     Alarm_Sql alarm_sql=new Alarm_Sql();
                     alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_offline, Alarm_object.gateway,gateway.getMap_key(),0,"",0,0,"",gateway.getName(),gateway.getAddress(),gateway.getProject_key(),gateway.getLasttime()));
                 }
-                println("推送离线"+gateway.getAddress());
+          //      println("推送离线"+gateway.getAddress());
                 StringUtil.sendGatewayPush(gateway,0);
                 //gateway.setOnline(0);
                 //println("离线");
             } else {
                 long onLineTime = now - firstTime;
-
+              //  println("推送在线"+gateway.getAddress());
+                StringUtil.sendGatewayPush(gateway,1);
                 //   redisUtil.set(redis_key_gateway_onLine_time_count+gateway.getAddress(),onLineTime/1000);
                 gateway.setOnlinetime(onLineTime );
                 //   println("当前时间="+df.format(now));
@@ -138,9 +140,13 @@ public class gatewayStatusTask {
         new Thread(new Runnable() {
             @Override
             public void run() {
+                println("mqtt客户端"+client);
                 if (client!=null&&!client.getStatus()){
                     println("mqtt执行重连哦");
                     client.start();
+                }
+                else if (client==null){
+                    println("mqtt执行重连哦是空值，不合理");
                 }
             }
         }).start();

@@ -109,7 +109,7 @@ public class FWordcardControl {
         fWordcard.setCreate_time(System.currentTimeMillis()/1000);
         fWordcard.setCustomer_key(customer.getCustomerkey());
         fWordcard.setUser_key(customer.getUserkey());
-
+        println("工卡="+fWordcard);
         boolean status=fWordcardSql.addWordcard(fWordcardMapper,fWordcard);
         if(status){
             return JsonConfig.getJsonObj(CODE_OK,null,lang);

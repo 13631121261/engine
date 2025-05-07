@@ -25,7 +25,7 @@ import static java.lang.Math.abs;
 
 @Component
 public class getLocationTask {
-    final boolean open_b=true;
+    final boolean open_b=false;
     //取两点之间的坐标值。二分之一
     final double open_b_p=0.33;
     public static String beacon_address="";
@@ -40,97 +40,7 @@ public class getLocationTask {
 
         //  println("定时一秒一次="+count);
         count++;
-
-
-        /*
-        count++;
-        for (String address : wordcard_aMap.keySet()) {
-            //只对转发精准定位工卡做三点定位
-            if (wordcard_aMap.get(address).getType() != 3) {
-                continue;
-            }
-            if(!address.equals("e5a2674d14b5")&&!address.equals("cabb00640003")&&!address.equals("cabb00640002")&&!address.equals("cabb00640001")){
-                continue;
-            }
-            String json = null;
-            try {
-                json = (String) redisUtil.get(redis_key_card_map + address);
-                if (json == null) {
-                    json = (String) redisUtil.get(redis_key_device_gateways + address);
-                    //println("信标"+json);/
-                }
-
-            } catch (Exception e) {
-                println("异常" + e.getMessage());
-            }
-            // println("数据="+json);
-            if (json == null) {
-                //  println("此设备没有收集到网关记录");
-            } else {
-                try {
-                    Gateway_devices gateways = new Gson().fromJson(json, Gateway_devices.class);
-                    List<Gateway_device> list = gateways.getGatewayDevices();
-                    println("*长度//" + list.size());
-                    for(int i=0;i<list.size();i++){
-                        println("*长度//"+list.get(i).getgAddress()+"  信号="+list.get(i).getRssi());
-
-                    }
-                    if (list == null) {
-                        println("定位列表为空");
-                        return;
-                    }
-                    for (Gateway_device gateway_device : list) {
-                        List<Integer> list1 = map.get(gateway_device.getgAddress());
-                        if (list1 == null) {
-                            list1 = new ArrayList<>();
-                        }
-                        list1.add(gateway_device.getRssi());
-                        map.put(gateway_device.getgAddress(), list1);
-                    }
-                    if(count==20){
-                        println("开始写数据");
-                        StringUtil.createExcelTwo("工卡与信标数据.xls",map);
-                    }
-                    else{
-                        println("累计次数="+count);
-                    }
-                    Location location = util.calculate(list, address);
-                    if (location != null) {
-                        println(address + " X=" + location.getX() + "   Y=" + location.getY());
-                        //   location.setName("");
-                        for(int i=0;i<area_list.size();i++){
-                            Area area=area_list.get(i);
-                            if(check(area,location)){
-                                location.setName(area.getName());
-                                println("已定位"+area.getName());
-                                 break;
-                            }
-                        }
-                        redisUtil.set(redis_key_card_map + address, null);
-                        redisUtil.set(redis_key_device_gateways + address, null);
-                        println("已保存");
-                        Location location1 = (Location) redisUtil.get(redis_key_location_tag + address);
-                        if (location1 != null) {
-                            double x = (location.getX() + location1.getX()) / 2;
-                            double y = (location.getY() + location1.getY()) / 2;
-                            location.setX(x);
-                            location.setY(y);
-                        }
-                        if (LocationTask.recordMap.get(address) != null) {
-
-                            LocationTask.recordMap.get(address).setX(location.getX());
-                            LocationTask.recordMap.get(address).setY(location.getY());
-                            if (address.equals("c906fae22cad")) {
-                                println("工卡不为空" + LocationTask.recordMap.get(address));
-                            }
-
-                        }
-                        redisUtil.set(redis_key_location_tag + address, location);
-                    }
-                } catch (Exception e) {
-                }
-            }
-        }*/if(count % interval == 0){
+    if(count % interval == 0){
 
         Project_Sql project_sql = new Project_Sql();
         List<Project> projects = project_sql.getAllProject(projectMapper);
@@ -153,7 +63,7 @@ public class getLocationTask {
                                 json = (String) redisUtil.get(redis_key_device_gateways + beacon_address);
                                 if (json != null) {
                                     gateways = new Gson().fromJson(json, Gateway_devices.class);
-                                    Location location = util.calculate(gateways.getGatewayDevices(), beacon_address);
+                                    Location location = util.calculate(gateways.getGatewayDevices(), beacon_address,beacon.getL_type());
                                     // println("X="+location.getX()+"   Y="+location.getY());
                                     beacon.setMap_key(location.getMap_key());
                                     ArrayList<Object> list = new ArrayList<>();
@@ -194,13 +104,15 @@ public class getLocationTask {
                                         beacon.setX(location.getX());
                                         beacon.setY(location.getY());
                                         redisUtil.set(redis_key_location + beacon_address, location);
-                                        list.add(beacon);
+
                                     }
+                                    else{
+                                        beacon.setX(location.getX());
+                                        beacon.setY(location.getY());
+                                    }
+                                    list.add(beacon);
                                     beacon.setUseDatalist((ArrayList) location.getDataMap());
                                     beacon.setGatewayDevices(gateways.getGatewayDevices());
-
-
-                                    //        println("debug推送"+beacon_address);
                                     JSONObject jsonObject1 = new JSONObject();
                                     jsonObject1.put("tag", list);
                                     RabbitMessage rabbitMessage1 = new RabbitMessage("", jsonObject1.toString(), beacon.getMap_key());
@@ -225,8 +137,11 @@ public class getLocationTask {
                             json = (String) redisUtil.get(redis_key_device_gateways + address);
                             if (json != null) {
                                 gateways = new Gson().fromJson(json, Gateway_devices.class);
+                                if(gateways.getGatewayDevices().isEmpty()){
+                                    continue;
+                                }
                                 ///   println("数据="+json);
-                                Location location = util.calculate(gateways.getGatewayDevices(), address);
+                                Location location = util.calculate(gateways.getGatewayDevices(), address,beacon.getL_type());
                                 //  println("计算位置="+location);
                                 beacon.setMap_key(location.getMap_key());
                                 ArrayList<Object> list = new ArrayList<>();
@@ -285,10 +200,13 @@ public class getLocationTask {
                                           println("原始==" + location.getX());
                                           println("原始==" + location.getY());
                                       }*/
-                                    list.add(beacon);
+
                                     //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
 
                                 }
+                                beacon.setX(location.getX());
+                                beacon.setY(location.getY());
+                                list.add(beacon);
                                 beaconsMap.put(address, beacon);
                                 try {
                                     redisUtil.set(redis_key_location + address, location);
@@ -296,8 +214,7 @@ public class getLocationTask {
                                     println("莫名错误11");
                                 }
                                 //  println("location.getY="+location.getY());
-                                beacon.setX(location.getX());
-                                beacon.setY(location.getY());
+
                                 beacon.setGateway_address(location.getgAddress());
                                 sendLocationPush(beacon);
                                 //  if(s%6==0){
@@ -351,12 +268,12 @@ public class getLocationTask {
                             } else {
                                 continue;
                             }
-                            println("1数据=" + beaconTags);
+
                             println("1数据2=" + beaconTags.size());
                             if (beaconTags.isEmpty()) {
                                 continue;
                             }
-                            Location location = util.calculate(beaconTags, imei);
+                            Location location = util.calculate(beaconTags, imei,2);
                             //  println("计算位置="+location);
 
 
@@ -420,10 +337,11 @@ public class getLocationTask {
                                       println("原始==" + location.getX());
                                       println("原始==" + location.getY());
                                   }*/
-                                list.add(fWordcard);
+
                                 //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
 
                             }
+
                             //    fWordcardMap.put(imei,fWordcard);
                             try {
                                 redisUtil.set(redis_key_location + imei, location);
@@ -433,6 +351,7 @@ public class getLocationTask {
                             //  println("location.getY="+location.getY());
                             fWordcard.setX(location.getX());
                             fWordcard.setY(location.getY());
+                            list.add(fWordcard);
                             sendLocationPush_OFcat1(fWordcard);
                             //  if(s%6==0){
                             try {
@@ -486,7 +405,7 @@ public class getLocationTask {
                             if (beaconTags.isEmpty()) {
                                 continue;
                             }
-                            Location location = util.calculate(beaconTags, address);
+                            Location location = util.calculate(beaconTags, address,2);
                             //  println("计算位置="+location);
 
 
@@ -550,10 +469,11 @@ public class getLocationTask {
                                       println("原始==" + location.getX());
                                       println("原始==" + location.getY());
                                   }*/
-                                list.add(bracelet);
+
                                 //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
 
                             }
+
                             //    fWordcardMap.put(imei,fWordcard);
                             try {
                                 redisUtil.set(redis_key_location + address, location);
@@ -563,6 +483,7 @@ public class getLocationTask {
                             //  println("location.getY="+location.getY());
                             bracelet.setX(location.getX());
                             bracelet.setY(location.getY());
+                            list.add(bracelet);
                             sendLocationPush_Bracelet(bracelet);
                             //  if(s%6==0){
                             try {
@@ -587,6 +508,127 @@ public class getLocationTask {
 
 
                 }
+
+//蓝牙工卡定位
+                for (String mac : wordcard_aMap.keySet()) {
+
+                    Wordcard_a wordcardA = wordcard_aMap.get(mac);
+                    // println("11数据="+fWordcard);
+                    if (wordcardA != null && wordcardA.getOnline() == 1 && wordcardA.getProject_key().equals(project.getProject_key())) {
+                        //   println("331数据="+fWordcard);
+
+                        try {
+
+                            Object o = redisUtil.get(redis_key_device_gateways + mac);
+
+
+                            if (o != null) {
+                                if (o.getClass().getName().contains("String")) {
+                                    System.out.println("O=异常=" + ((String) o));
+                                }
+
+                                beaconTags = (ArrayList<Gateway_device>) o;
+                            } else {
+                                continue;
+                            }
+
+                            println("1数据2=" + beaconTags.size());
+                            if (beaconTags.isEmpty()) {
+                                continue;
+                            }
+                            Location location = util.calculate(beaconTags, mac,2);
+                            println("计算位置="+location);
+                            println("原始=="+beaconTags);
+
+
+                            wordcardA.setMap_key(location.getMap_key());
+
+                            ArrayList<Object> list = new ArrayList<>();
+                            if (open_b) {
+                                //记得这里可能涉及json的无穷大只
+                                //   aa
+                                Location location1 = null;
+                                try {
+                                    location1 = (Location) redisUtil.get(redis_key_location + mac);
+                                    println("位置="+location1);
+                                } catch (Exception e) {
+                                    println("莫名错误11");
+                                }
+
+                                if (location1 != null && !Double.isNaN(location1.getY()) && !Double.isNaN(location1.getX())) {
+
+                                    double d = Math.sqrt(Math.pow((location.getX() - location1.getX()), 2) + Math.pow((location.getY() - location1.getY()), 2));
+                                    // println("两点距离="+d);
+                                    double y = (location.getY() - location1.getY());
+                                    double x = (location.getX() - location1.getX());
+                                    int a = x >= 0 ? 1 : -1;
+                                    int b = y >= 0 ? 1 : -1;
+
+
+                                    if (d > 8) {
+                                        location.setX((2.8 + (d - 8) * 0.05) * a + location1.getX());
+                                        location.setY((2.8 + (d - 8) * 0.05) * b + location1.getY());
+
+
+                                    } else if (d > 5) {
+                                        location.setX((2.5 + (d - 5) * 0.1) * a + location1.getX());
+                                        location.setY((2.5 + (d - 5) * 0.1) * b + location1.getY());
+                                    } else if (d > 3) {
+                                        location.setX((1 + (d - 3) * 0.75) * a + location1.getX());
+                                        location.setY((1 + (d - 3) * 0.75) * b + location1.getY());
+                                    } else {
+                                        location.setX(d * 0.33 * a + location1.getX());
+                                        location.setY(d * 0.33 * b + location1.getY());
+                                        // println("这里666="+d*0.33*a);
+                                    }
+                                } else {
+                                    println("不存在+位置");
+                                }
+                              /*    if(location.getMac().equals("f0c890021002")) {
+                                      println("原始==" + location.getX());
+                                      println("原始==" + location.getY());
+                                  }*/
+
+                                //    println("定位信标="+address+"   地图key="+beacon.getMap_key());
+
+                            }
+
+                            //    fWordcardMap.put(imei,fWordcard);
+                            try {
+                                redisUtil.set(redis_key_location + mac, location);
+                            } catch (Exception e) {
+                                println("莫名错误11");
+                            }
+                            //  println("location.getY="+location.getY());
+                            wordcardA.setX(location.getX());
+                            wordcardA.setY(location.getY());
+                            list.add(wordcardA);
+                            sendLocationPush_workcard(wordcardA);
+                            //  if(s%6==0){
+                            try {
+                                JSONObject jsonObject1 = new JSONObject();
+                                //   println("list="+list);
+                                jsonObject1.put("tag", list);
+
+                                RabbitMessage rabbitMessage1 = new RabbitMessage("", jsonObject1.toString(), wordcardA.getMap_key());
+                                println("蓝牙工卡位置推送-----" + rabbitMessage1.toString());
+                                directExchangeProducer.send(rabbitMessage1.toString(), "sendtoMap");
+                            } catch (Exception e) {
+                                println("莫名错误996" + e.getMessage());
+                            }
+                            //
+                            redisUtil.set(redis_key_device_gateways + mac, null);
+                        } catch (Exception e) {
+                            println("22json=" + beaconTags);
+                            println("11法国红酒封口的" + e.getMessage());
+                            redisUtil.set(redis_key_device_gateways + mac, null);
+                        }
+
+                    }
+
+
+                }
+
 
 
             }

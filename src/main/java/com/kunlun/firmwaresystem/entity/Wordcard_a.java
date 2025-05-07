@@ -1,5 +1,7 @@
 package com.kunlun.firmwaresystem.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
+
 public class Wordcard_a extends Tag {
     int id;
     int sos;
@@ -9,25 +11,43 @@ public class Wordcard_a extends Tag {
     String idcard;
     double x,y;
     String customer_key;
+    String project_key;
+    @TableField(exist=false)
+    String  map_key;
+    long create_time;
 
+    public void setCreate_time(long create_time) {
+        this.create_time = create_time;
+    }
 
-    public Wordcard_a(String mac,
-                      String user_key, String type, String customer_key, int id) {
-
-        this.mac = mac;
-        this.user_key = user_key;
-        this.type = type;
-        this.customer_key=customer_key;
-        this.id=id;
+    public long getCreate_time() {
+        return create_time;
     }
 
     public Wordcard_a(String mac,
-                      String user_key, String type, String customer_key) {
+                      String user_key, String type, String customer_key, String project_key) {
 
         this.mac = mac;
         this.user_key = user_key;
         this.type = type;
         this.customer_key=customer_key;
+        this.project_key=project_key;
+    }
+
+    public void setMap_key(String map_key) {
+        this.map_key = map_key;
+    }
+
+    public String getMap_key() {
+        return map_key;
+    }
+
+    public void setProject_key(String project_key) {
+        this.project_key = project_key;
+    }
+
+    public String getProject_key() {
+        return project_key;
     }
 
     public int getId() {

@@ -118,8 +118,17 @@ public class CallBackHandlers implements Runnable {
                     redisUtil.set(redis_key_gateway + gatewayAddress,gateway);
                 }
             }
-
-
+/*
+            if (gatewayAddress != null) {
+                switch (gatewayAddress){
+                   // case "c3b0b1938b79":
+                    case "c7e96ea72eda":
+                   // case "ea08237d9d9f":
+                   // case "f0d6269ebde0":
+                     //   println("输出原始");
+                      //  println(data);
+                }
+            }*/
             //标准版本不做自动添加网关功能
            /* if (gateway == null&&!topic.equals("AlphaRsp")) {
 
@@ -275,6 +284,7 @@ public class CallBackHandlers implements Runnable {
             case Constant.pkt_type_state:
                 object = analysisState(jsonObject);
                 break;
+
         }
 
         if (object == null) {
@@ -297,6 +307,9 @@ public class CallBackHandlers implements Runnable {
                     String type = scan_report_data.getReport_type();
                     if (type.equals("stuff_card")) {
                         //把工卡进行解析，SOS即时保存并通知到网页，并且把工卡扫描到的每个信标进行保存。
+
+                            println("输出其他数据类型="+data);
+
                         WordCardHandle(gateway, scan_report_data);
                     } else if (type.equals("adv_only") || type.equals("adv_srp")) {
                         //处理beacon解析，SOS即时保存并通知网页
@@ -438,21 +451,25 @@ public class CallBackHandlers implements Runnable {
                 Beacon beacon=beaconsMap.get(device.getAddr());
                 Bracelet bracelet=braceletsMap.get(device.getAddr());
                 if(beacon!=null){
+                    beacon.setLastTime(time);
                     beacon.setGateway_address(gateway.getAddress());
                     if(beacon.getOnline()!=1){
-
                         // StringUtil.saveRecord(gateway.getAddress(),gateway.getLasttime(),gateway.getUser_key(),1,1,gateway.getProject_key());
                         Alarm_Sql alarm_sql = new Alarm_Sql();
                         alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_online,Alarm_object.beacon,gateway.getMap_key(),0,"", 0,0,"","Beacon",beacon.getMac(),beacon.getProject_key(),beacon.getLastTime()));
                     }
-                  //  StringUtil.sendBeaconPush_onOff(beacon,1);
-                    beacon.setLastTime(time);
+                    StringUtil.sendBeaconPush_onOff(beacon,1,gateway.getAddress());
+
                     beacon.setRssi(device.getRssi());
                     beacon.setGateway_address(gateway.getAddress());
                     String types[]=beacon.getType().split("-");
                     if(types.length>=2){
                         String type=types[types.length-1];
                         //服务数据表示电压值
+                        if(beacon.getMac().equals("f0c890020c78")){
+                            println(gateway.getAddress()+"111f0c890020c78"+device.getAdv_raw());
+                            println("222f0c890020c78"+device.getSrp_raw());
+                        }
                         if (type.equals("1")) {
                             //0x0201061AFF4C000215FDA50693A4E24FB1AFCFC6EB0764782510148238C5
                             // 12164C4B0AAD0500F0C810148238000000000008094B313438323338
@@ -487,6 +504,20 @@ public class CallBackHandlers implements Runnable {
                             }
 
                         }
+                        else if(type.equals("4")){
+                            if(device.getSrp_raw()!=null&&! device.getSrp_raw().isEmpty()){
+                                byte[] btdata = StringUtil.hexToByteArr(device.getSrp_raw());
+                                if(btdata.length >0){
+                                    int bt=(btdata[4]&0xff)*256+(btdata[5]&0xff);
+                                    beacon.setBt(bt+" mV");
+                                    beacon.setSos(btdata[15]);
+                                    println("运动状态="+beacon.getRun());
+                                }
+                            }
+
+
+                        }
+
                         /* if (btdata.length == 30) {
                             String str = Integer.toBinaryString((btdata[29] & 0xFF) + 0x100).substring(1);
                             char[] bit = str.toCharArray();
@@ -678,11 +709,8 @@ public class CallBackHandlers implements Runnable {
                             redisUtil.set(redis_key_device_gateways + bracelet.getMac(),beaconTags);
                         }
                         }
-
                     }
                 }
-
-
     }
     private void WordCardHandle(Gateway gateway, Scan_report_data scan_report_data) {
         Scan_report_data_info[] scanReportDataInfos = scan_report_data.getDev_infos();
@@ -691,50 +719,68 @@ public class CallBackHandlers implements Runnable {
             if (wordcard_aMap.get(device.getAddr()) == null) {
                 continue;
             }
-            if(wordcard_aMap.get(device.getAddr()).getIsbind()==0){
-
-                writeLog("---工卡不是空，但是未被人员绑定，跳过，继续循环");
-                continue;
-            }
-            //如果绑定了但是没有身份证号，那就是异常，记录日志
-            if(wordcard_aMap.get(device.getAddr()).getIdcard()==null){
-                writeLog("###工卡绑定人员异常，状态绑定了没有身份证号");
-                continue;
-            }
             Wordcard_a wordCard_a = wordcard_aMap.get(device.getAddr());
             //  println("输出设备="+device.toString()+device);
             int bt = device.getBatt();
             if (bt != -1) {
                 wordCard_a.setBt(bt+"");
             }
+            wordCard_a.setLastTime(System.currentTimeMillis()/1000);
             wordCard_a.setRun(device.getMotion());
             wordCard_a.setMac(device.getAddr());
+            wordCard_a.setSos(device.getKeys());
             wordCard_a.setOnline(1);
             redisUtil.set(redis_key_device_sos+device.getAddr(),device.getKeys());
             //当前工卡SOS状态和之前的状态SOS不一致并且是报警，就更新推送，否则不推送
             Ibcn_infos[] ibcn_infos = device.getIbcn_infos();
-            Gateway_devices gateways = null;
-            String json = null;
             try {
-                json = (String) redisUtil.get(redis_key_card_map + device.getAddr());
+                ArrayList<Gateway_device> beaconTags=new ArrayList<>();
+                Btag_Sql btag_sql=new Btag_Sql();
+                if (ibcn_infos==null||ibcn_infos.length==0) {
+                    return;
+                }
+
+                ///println("熟组="+beaconTags);
+                for (Ibcn_infos ibcnInfo : ibcn_infos) {
+                    //   println("信标"+j);
+                    int major = ibcnInfo.getMajor();
+                    int minor = ibcnInfo.getMinor();
+                    int rssi = ibcnInfo.getRssi();
+                    println("major=" + major + "  Minor=" + minor + " rssi=" + rssi);
+                    Beacon_tag beaconTag = btag_sql.getOne(bTagMapper, major, minor);
+                    if (beaconTag != null) {
+                        beaconTag.setOnline(1);
+                        beaconTag.setLast_time(System.currentTimeMillis() / 1000);
+                        bTagMapper.updateById(beaconTag);
+                        Gateway_device gatewayDevice = new Gateway_device(major + ":" + minor, wordCard_a.getMac(), rssi, beaconTag.getX(), beaconTag.getY(), System.currentTimeMillis() / 1000, beaconTag.getMap_key(), -51, 2.67, 0, 1);
+                        beaconTags.add(gatewayDevice);
+                        ///println("熟组="+beaconTags);
+                        Tag_log tagLog = new Tag_log();
+                        tagLog.setBeacon_address(wordCard_a.getMac());
+                        tagLog.setGateway_address(major + ":" + minor);
+                        tagLog.setCreate_time(System.currentTimeMillis() / 1000);
+                        tagLog.setProject_key(wordCard_a.getProject_key());
+                        tagLog.setKeys1(wordCard_a.getSos());
+                        //   tagLog.setRun(fWordcard.getRun());
+                        tagLog.setBt(wordCard_a.getBt() + "");
+                        tagLog.setGateway_name(beaconTag.getName());
+                        beaconTag.setMap_key(gateway.getMap_key());
+                        tagLog.setRssi(rssi);
+                        tagLog.setType("");
+                        //  println("log="+tagLog);
+                        TagLogSql tagLogSql = new TagLogSql();
+                        tagLogSql.addLog(NewSystemApplication.tagLogMapper, tagLog);
+                        sendBeacon_tagPush(beaconTag,1);
+                    }
+                }
+                //    println("预备1");
+                if(!beaconTags.isEmpty()){
+                    redisUtil.set(redis_key_device_gateways + wordCard_a.getMac(),beaconTags);
+                }
             } catch (Exception e) {
                 println("法国红酒封口的" + e.getMessage());
             }
-            if (json == null) {
-                gateways = new Gateway_devices();
-                ArrayList<Gateway_device> gatewayDevices = new ArrayList<>();
-                gateways.setGatewayDevices(gatewayDevices);
-                println("没有数据" + device.getAddr());
-                //   println(data);
-            } else {
-                try {
-                    gateways = new Gson().fromJson(json, Gateway_devices.class);
-                    if (gateways.getGatewayDevices().size() >= 30) {
-                        gateways.getGatewayDevices().remove(0);
-                    }
-                } catch (Exception e) {
-                }
-            }
+
         }
     }
 
@@ -747,12 +793,12 @@ public class CallBackHandlers implements Runnable {
                     break;
                 }
             }
-            for (String wordcardMac : wordcard_aMap.keySet()) {
+        /*    for (String wordcardMac : wordcard_aMap.keySet()) {
                 if (wordcardMac.equals(scanReportDataInfo.getAddr()) && wordcard_aMap.get(wordcardMac) != null) {
                     index = 100;
                     break;
                 }
-            }
+            }*/
             if (index == -1) {
                 continue;
             }
@@ -761,7 +807,7 @@ public class CallBackHandlers implements Runnable {
             try {
                 json = (String) redisUtil.get(redis_key_device_gateways + scanReportDataInfo.getAddr());
             } catch (Exception e) {
-                println("法国红酒封口的"+e.getMessage());
+                println("异常"+e.getMessage());
             }
             if (json == null) {
                 gateways = new Gateway_devices();

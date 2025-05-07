@@ -139,5 +139,22 @@ public class Gateway_device {
         this.rssi = rssi;
     }
 
-
+    @Override
+    public String toString() {
+        return "Gateway_device{" +
+                "gAddress='" + gAddress + '\'' +
+                ", dAddress='" + dAddress + '\'' +
+                ", x=" + x +
+                ", y=" + y +
+                ", rssi=" + rssi +
+                ", n=" + n +
+                ", a_rssi=" + a_rssi +
+                ", time=" + time +
+                ", map_key='" + map_key + '\'' +
+                ", d=" + d +
+                ", z=" + z +
+                ", used=" + used +
+                ", l_type=" + l_type +
+                '}';
+    }
 }

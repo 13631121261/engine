@@ -19,13 +19,13 @@ public class LocationUtil {
     /**
      * @param dataList 一个设备对应的基站信号值
      * @param address 设备的mac*/
-    public Location calculate(List<Gateway_device> dataList, String address) {
+    public Location calculate(List<Gateway_device> dataList, String address,int type) {
         Map<String, List<Gateway_device>> dataMap = new HashMap<>();
         //把这个设备的被对应的网关扫描的信息取出
         List<Gateway_device> gateway_beacon;
         Gateway_device data;
-        println("信标="+dataList.get(0).dAddress);
-       println("dataList长度" + dataList.size());
+      //  println("信标="+dataList.get(0).dAddress);
+   //    println("dataList长度" + dataList.size());
         for (int i = 0; i < dataList.size(); i++) {
             data = dataList.get(i);
             String gmac = data.getgAddress();
@@ -38,7 +38,7 @@ public class LocationUtil {
                 gateway_beacon.add(data);
             }
         }
-              println("dataMap"+dataMap.size());
+             // println("dataMap"+dataMap.size());
       /*  if(dataMap.size()<=2){
             if(dataMap.size()==2){
 
@@ -49,7 +49,7 @@ public class LocationUtil {
 
       //   println("dataMap长度" + dataMap.size());
         //整理好全部code对应的位置
-        Point points = onePoint(dataMap);
+        Point points = onePoint(dataMap,type);
       //  println(points);
         Location location = new Location(points, address,points.getMap_key());
         location.setDataMap(points.getList());
@@ -57,12 +57,12 @@ public class LocationUtil {
     }
 
 //
-    private Point onePoint(Map<String, List<Gateway_device>> beaconMap) {
+    private Point onePoint(Map<String, List<Gateway_device>> beaconMap,int type) {
         ArrayList<Gateway_device> list = new ArrayList<>();
         for (String key : beaconMap.keySet()) {
             int rssi = 0;
             List<Gateway_device> dataList = beaconMap.get(key);
-            if (dataList.size() == 0) {
+            if (dataList.isEmpty()) {
                     println("出现了定位周期内，此网关没有扫描到设备的情况，按理说不可能");
             } else {
 
@@ -83,24 +83,39 @@ public class LocationUtil {
             }
         }
 
-        for(int i=list.size()-1;i>=0;i--){
-            println("循环次数="+i);
-            if(i>=1){
-                if(list.get(i).getRssi()<list.get(i-1).getRssi()){
-                    println("删除i="+i);
-                    list.remove(i);
-                }else{
-                    list.remove(i-1);
-                    println("删除i="+(i-1));
+        if(type==0){
+            for(int i=list.size()-1;i>=0;i--){
+             //   println("循环次数="+i);
+                if(i>=1){
+                    if(list.get(i).getRssi()<list.get(i-1).getRssi()){
+                        println("删除i="+i);
+                        list.remove(i);
+                    }else{
+                        list.remove(i-1);
+                        println("删除i="+(i-1));
+                    }
                 }
+
+
             }
-
-
+        }else if (type==1){
+            int size = list.size();
+            for (int i = 0; i < size - 1; i++) {
+                // println("循环次数="+i);
+                int n = 0;
+                for (int j = 0; j < list.size(); j++) {
+                    if (list.get(j).getRssi() < list.get(n).getRssi()) {
+                        n = j;
+                    }
+                }
+                list.remove(n);
+            }
         }
+
         println("定位长度="+list.size());
         //
         if(list.size()==1){
-        //    println("只有一个网关"+list.get(0).getX());
+            println("只有一个网关"+list.get(0).getdAddress());
             Point p = new Point(list.get(0).getX(), list.get(0).getY(), list.get(0).getgAddress(),list.get(0).getMap_key());
             p.setList(list);
          //   println("只有一个P"+p.getX());
@@ -122,18 +137,15 @@ public class LocationUtil {
         } else {
             //取信号强度最强的四个，每三个定位一次，再取中间点。
             int size = list.size();
-            if (list.size() != 3) {
-                for (int i = 0; i < size - 3; i++) {
-                     // println("循环次数="+i);
-                    int n = 0;
-                    for (int j = 0; j < list.size(); j++) {
-                        if (list.get(j).getRssi() < list.get(n).getRssi()) {
-                            n = j;
-                        }
+            for (int i = 0; i < size - 3; i++) {
+                // println("循环次数="+i);
+                int n = 0;
+                for (int j = 0; j < list.size(); j++) {
+                    if (list.get(j).getRssi() < list.get(n).getRssi()) {
+                        n = j;
                     }
-                //    println("删除n="+n+" -name="+list.get(n).getgAddress()+"  信号="+list.get(n).getRssi());
-                    list.remove(n);
                 }
+                list.remove(n);
             }
             for (int i = 0; i < list.size(); i++) {
                 println("剩余="+list.get(i).getgAddress()+"  信号="+list.get(i).getRssi());
@@ -142,37 +154,11 @@ public class LocationUtil {
             list1.add(list.get(0));
             list1.add(list.get(1));
             list1.add(list.get(2));
-          /*  List<Data> list2=new ArrayList<>();
-            list2.add(list.get(1));
-            list2.add(list.get(2));
-            list2.add(list.get(3));*/
-         /*   List<Data> list3=new ArrayList<>();
-            list3.add(list.get(2));
-            list3.add(list.get(3));
-            list3.add(list.get(0));*/
             Point p1 = getPoint(list1);
             if (p1 != null) {
                 p1.setList(list1);
             }
-         /*   Point p2= getPoint(list2);
-            Point p3= getPoint(list3);
-            double x=(p1.x+p2.x+p3.x)/3;
-            double y=(p1.y+p2.y+p3.y)/3;
-            Point p=new Point();
-            p.x=x;
-            p.y=y;*/
 
-/*
-            double d1=sqrt(abs(LocationApplication.x-p1.x)*abs(LocationApplication.x-p1.x)+abs(LocationApplication.y-p1.y)*abs(LocationApplication.y-p1.y));
-
-            double d2=sqrt(abs(LocationApplication.x-p2.x)*abs(LocationApplication.x-p2.x)+abs(LocationApplication.y-p2.y)*abs(LocationApplication.y-p2.y));
-
-            double d3=sqrt(abs(LocationApplication.x-p3.x)*abs(LocationApplication.x-p3.x)+abs(LocationApplication.y-p3.y)*abs(LocationApplication.y-p3.y));
-            //    println("X=" + location.getX() + "   Y=" + location.getY()+" 误差距离="+d);
-            println("点1 X="+p1.x+" Y="+p1.y+" 误差="+d1);
-            println("点2 X="+p2.x+" Y="+p2.y+" 误差="+d2);
-            println("点3 X="+p3.x+" Y="+p3.y+" 误差="+d3);
-            println("取平均位置");*/
             return p1;
         }
 
@@ -191,15 +177,15 @@ public class LocationUtil {
             int rssi = list.get(i).getRssi();
 
             double d = (abs(rssi) -abs( list.get(i).getA_rssi())) / (10 * list.get(i).getN());
-           // println("距离="+i);
+            println("距离="+d+"   "+ list.get(i).getA_rssi());
 
           //  println("高度="+list.get(i).getZ());
             d = pow(10, d);
            //
             if(d>1){
-                if(list.get(i).getZ()>0){
-                    d = sqrt((d * d) - list.get(i).getZ());
-                }
+               // if(list.get(i).getZ()>0){
+                    d = sqrt((d * d) - 1);
+                //}
             }else{
                 Point point = new Point();
                 point.setMap_key(list.get(i).getMap_key());
@@ -232,9 +218,9 @@ public class LocationUtil {
             dis[i] = d;
 
             String result = String.format("%.2f", d);
-          //  println("rssi="+rssi  +"    距离="+result);
+            println("rssi="+rssi  +"    距离="+result);
             list.get(i).setD(Double.parseDouble(result));
-          //  println(list.get(i).getgAddress() + "    坐标=" + list.get(i).getX() + "   " + list.get(i).getY() + "   rssi=" + list.get(i).getRssi() + "   距离=" + d);
+            println(list.get(i).getgAddress() + "    坐标=" + list.get(i).getX() + "   " + list.get(i).getY() + "   rssi=" + list.get(i).getRssi() + "   距离=" + d);
             if (d > 100) {
                 //  println("距离严重错误");
                 return null;

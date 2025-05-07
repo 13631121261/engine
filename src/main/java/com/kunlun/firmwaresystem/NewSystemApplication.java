@@ -215,12 +215,10 @@ public class NewSystemApplication {
         GatewayMap= gateway_sql.getAllGateway( gatewayMapper);
         GatewayConfig_sql project_sql = new GatewayConfig_sql();
         gatewayConfigMap = project_sql.getAllConfig(gatewayConfigMapper);
-
         Project_Sql projectSql=new Project_Sql();
         usedMap=projectSql.getUsed(projectMapper);
         Rules_sql r = new Rules_sql();
         rulesMap = r.getAllRules(rulesMapper);
-
         Btag_Sql btag_sql = new Btag_Sql();
         beacon_tagMap = btag_sql.getAllBeacon(bTagMapper);
         Beacon_Sql beacon_sql = new Beacon_Sql();
@@ -243,7 +241,7 @@ public class NewSystemApplication {
           public void run() {
               Map_Sql map_sql=new Map_Sql();
               map_sql.getAllMap(mapMapper,redisUtil);
-              client = new MyMqttClient("120.77.232.76",1883,"asd","location_engine",0,"","","");
+              client = new MyMqttClient("127.0.0.1",1883,"asd","location_engine",0,"","","");
               client.start();
            //   myMqttClientMap=new HashMap<>();
          //     t_myMqttClientMap=new HashMap<>();

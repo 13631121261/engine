@@ -45,6 +45,7 @@ public class DeviceControl1111 {
 
     @Autowired
     private RedisUtils redisUtil;
+/*
 
     @RequestMapping(value = "/userApi/addWordCarda", method = RequestMethod.POST, produces = "text/plain")
     public String addWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") String type) {
@@ -66,8 +67,9 @@ public class DeviceControl1111 {
         redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
         return response;
     }
+*/
 
-    @RequestMapping(value = "/userApi/editWordCarda", method = RequestMethod.POST, produces = "text/plain")
+   /* @RequestMapping(value = "/userApi/editWordCarda", method = RequestMethod.POST, produces = "text/plain")
     public String editWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "mac") String mac, @ParamsNotNull @RequestParam(value = "project_key") String project_key, @ParamsNotNull @RequestParam(value = "type") String type, @ParamsNotNull @RequestParam(value = "id") int id) {
         String response = "";
         Customer user = getCustomer(request);
@@ -84,9 +86,9 @@ public class DeviceControl1111 {
         wordcard_aMap = wordCarda_sql.getAllWordCarda(wordCardaMapper);
         redisUtil.set(redis_key_tag_map + mac, new ArrayList<Record>(50));
         return response;
-    }
+    }*/
 
-    @RequestMapping(value = "/userApi/deleteWordCarda", method = RequestMethod.POST, produces = "text/plain")
+/*    @RequestMapping(value = "/userApi/deleteWordCarda", method = RequestMethod.POST, produces = "text/plain")
     public String deleteWordCarda(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "address") String address) {
         String response = "";
         Customer user = getCustomer(request);
@@ -96,7 +98,7 @@ public class DeviceControl1111 {
         wordcard_aMap = wordCarda_sql.getAllWordCarda(wordCardaMapper);
         redisUtil.set(redis_key_tag_map + address, new ArrayList<Record>(50));
         return response;
-    }
+    }*/
 
 
 
@@ -253,7 +255,7 @@ public class DeviceControl1111 {
     }
 
 */
-    @RequestMapping(value = "/userApi/getWordcarda", method = RequestMethod.GET, produces = "text/plain")
+  /*  @RequestMapping(value = "/userApi/getWordcarda", method = RequestMethod.GET, produces = "text/plain")
     public String getWordcarda(HttpServletRequest request, @RequestParam(value = "mac") String mac, @RequestParam(value = "name") String name, @ParamsNotNull @RequestParam(value = "page") String page,
                                @ParamsNotNull @RequestParam(value = "limit") String limit) {
         String response = "";
@@ -289,7 +291,7 @@ public class DeviceControl1111 {
         jsonObject.put("count", pageWordcarda.getTotal());
         jsonObject.put("data", recordList);
         return jsonObject.toString();
-    }
+    }*/
 //获取设备的离线记录，包括网关 信标等等
     @RequestMapping(value = "/userApi/getOffline", method = RequestMethod.GET, produces = "text/plain")
     public String getOffline(HttpServletRequest request, @ParamsNotNull @RequestParam(value = "page") String page,

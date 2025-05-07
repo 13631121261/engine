@@ -233,7 +233,8 @@ public class ServerChannelHandler extends SimpleChannelInboundHandler<Object> {
                             }
 
                         }
-                    //    channelHandlerContext.writeAndFlush(cmd).syncUninterruptibly();
+                        //下发语音消息
+                        //channelHandlerContext.writeAndFlush(cmd).syncUninterruptibly();
                         break;
                     case 0xF6:
                         println("88888888888888888 88888888888888888电量="+data[5]);

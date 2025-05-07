@@ -7,7 +7,7 @@ public class Gateway_device {
     double x, y;
     int rssi;
     double n=2.67;
-    int rssi_At_1m=-51;
+    int rssi_At_1m=-30;
 
     public Gateway_device() {
 

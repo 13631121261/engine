@@ -254,19 +254,20 @@ public class StringUtil {
     }
 
     //给第三方推送设备离线
-    public static void sendBeaconPush_onOff(Beacon beacon, int status) {
+    public static void sendBeaconPush_onOff(Beacon beacon, int status,String gateway_address) {
           //  println("--------------12");
         if (beacon.getUser_key() == null) {
             return;
         }
-        println("进行在线或者离线检测"+beacon.getMac()+"======="+status);
-      //  if (beacon.getOnline() != status) {
-      //      Check_sheet check_sheet = check_sheetMap.get(beacon.getProject_key());
-            //if (check_sheet !=null) {
                 beacon.setOnline(status);
                 JSONObject jsonObject = new JSONObject();
                 jsonObject.put("device_type", "beacon");
                 if(status==1){
+                    if(gateway_address!=null){
+                        jsonObject.put("gateway_address",gateway_address);
+
+                    }
+
                     jsonObject.put("push_type", "online");
                 }else{
                     jsonObject.put("push_type", "offline");
@@ -278,8 +279,8 @@ public class StringUtil {
                 jsonObject.put("project_key", beacon.getProject_key());
                 id++;
                 jsonObject.put("id", id);
-                jsonObject.put("time", sdf.format(new Date()));
-                    println("原始信标" + jsonObject);
+                jsonObject.put("time", System.currentTimeMillis()/1000);
+                 //   println("原始信标" + jsonObject);
                 RabbitMessage rabbitMessage = new RabbitMessage();
                 rabbitMessage.setMsg(jsonObject.toString());
                 directExchangeProducer.send(rabbitMessage.toString(), Push);
@@ -305,7 +306,7 @@ public class StringUtil {
                 id++;
                 jsonObject.put("id", id);
                 jsonObject.put("time", sdf.format(new Date()));
-                println("原始信标" + jsonObject);
+              //  println("原始信标" + jsonObject);
                 RabbitMessage rabbitMessage = new RabbitMessage();
                 rabbitMessage.setMsg(jsonObject.toString());
                 directExchangeProducer.send(rabbitMessage.toString(), Push);
@@ -313,14 +314,12 @@ public class StringUtil {
         //}
     }
 
-    //给第三方推送设备离线
+
     public static void sendGatewayPush(Gateway gateway, int status) {
         if (gateway.getUser_key() == null) {
             return;
         }
-        if (gateway.getOnline() != status) {
-               // Check_sheet check_sheet = check_sheetMap.get(gateway.getProject_key());
-                //if (check_sheet != null){
+
                     gateway.setOnline(status);
                     Gateway_sql gateway_sql = new Gateway_sql();
                     // println("上线后更新到数据库");
@@ -333,7 +332,6 @@ public class StringUtil {
                         jsonObject.put("push_type", "offline");
                     }
                     jsonObject.put("last_time",gateway.getLasttime());
-                    //  jsonObject.put("push_type", "online");
                     jsonObject.put("map_key",gateway.getMap_key());
                     jsonObject.put("x",gateway.getX());
                     jsonObject.put("y",gateway.getY());
@@ -342,13 +340,33 @@ public class StringUtil {
                     id++;
                     jsonObject.put("id", id);
                     jsonObject.put("time", sdf.format(new Date()));
-                    println("原始网关推送" + sdf.format(new Date()) + "Push" + "id=" + id);
                     RabbitMessage rabbitMessage = new RabbitMessage();
                     rabbitMessage.setMsg(jsonObject.toString());
                     directExchangeProducer.send(rabbitMessage.toString(), Push);
-            //}
-        }
     }
+
+    public static void sendBeacon_tagPush(Beacon_tag gateway, int status) {
+        if (gateway.getUser_key() == null) {
+            return;
+        }
+        gateway.setOnline(status);
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("device_type", "gateway");
+        jsonObject.put("push_type", "HeartBeat");
+        jsonObject.put("last_time",gateway.getLast_time());
+        jsonObject.put("map_key",gateway.getMap_key());
+        jsonObject.put("x",gateway.getX());
+        jsonObject.put("y",gateway.getY());
+        jsonObject.put("address", gateway.getMajor()+":"+gateway.getMinor());
+        jsonObject.put("project_key", gateway.getProject_key());
+        id++;
+        jsonObject.put("id", id);
+        jsonObject.put("time", sdf.format(new Date()));
+        RabbitMessage rabbitMessage = new RabbitMessage();
+        rabbitMessage.setMsg(jsonObject.toString());
+        directExchangeProducer.send(rabbitMessage.toString(), Push);
+    }
+
     //给第三方推送设备离线
     public static void sendGatewayHeartbeatPush(Gateway gateway) {
         if (gateway.getUser_key() == null) {
@@ -374,7 +392,7 @@ public class StringUtil {
                 id++;
                 jsonObject.put("id", id);
                 jsonObject.put("time", sdf.format(new Date()));
-                println("原始网关推送" + sdf.format(new Date()) + "Push" + "id=" + id);
+              //  println("原始网关推送" + sdf.format(new Date()) + "Push" + "id=" + id);
                 RabbitMessage rabbitMessage = new RabbitMessage();
                 rabbitMessage.setMsg(jsonObject.toString());
               //  println("转发原始="+rabbitMessage.getMsg());
@@ -384,7 +402,7 @@ public class StringUtil {
     }
     //给第三方推送位置信息
     public static void sendLocationPush(Beacon beacon) {
-         println("--------------12");
+      //   println("--------------12");
         if (beacon.getUser_key() == null) {
             return;
         }
@@ -406,7 +424,7 @@ public class StringUtil {
             id++;
             jsonObject.put("id", id);
             jsonObject.put("time", sdf.format(new Date()));
-              println("位置推送666" + jsonObject);
+        //      println("位置推送666" + jsonObject);
             RabbitMessage rabbitMessage = new RabbitMessage();
             rabbitMessage.setMsg(jsonObject.toString());
             directExchangeProducer.send(rabbitMessage.toString(), Push);
@@ -464,6 +482,33 @@ public class StringUtil {
             rabbitMessage.setMsg(jsonObject.toString());
             directExchangeProducer.send(rabbitMessage.toString(), Push);
       //  }
+
+    }
+    //昆仑工卡
+    public static void sendLocationPush_workcard(Wordcard_a wordcardA) {
+        //  println("--------------12");
+        if (wordcardA.getUser_key() == null) {
+            return;
+        }
+        // Check_sheet check_sheet = check_sheetMap.get(fWordcard.getProject_key());
+        // if (check_sheet !=null) {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("device_type", "kunlun_card");
+        jsonObject.put("push_type", "location");
+        jsonObject.put("x", wordcardA.getX());
+        jsonObject.put("y",wordcardA.getY());
+        jsonObject.put("map_key",wordcardA.getMap_key());
+        jsonObject.put("last_time",wordcardA.getLastTime());
+        jsonObject.put("address", wordcardA.getMac());
+        jsonObject.put("project_key", wordcardA.getProject_key());
+        id++;
+        jsonObject.put("id", id);
+        jsonObject.put("time", sdf.format(new Date()));
+        //  println("原始信标" + sdf.format(new Date()) + "Push" + "id=" + id);
+        RabbitMessage rabbitMessage = new RabbitMessage();
+        rabbitMessage.setMsg(jsonObject.toString());
+        directExchangeProducer.send(rabbitMessage.toString(), Push);
+        //  }
 
     }
 

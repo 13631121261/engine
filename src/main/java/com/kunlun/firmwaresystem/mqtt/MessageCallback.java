@@ -40,12 +40,12 @@ public class MessageCallback implements MqttCallback {
     public void disconnected(MqttDisconnectResponse mqttDisconnectResponse) {
         // 连接丢失后，一般在这里面进行重连
         println("连接断开，可以做重连" + mqttDisconnectResponse.getReasonString());
-        try {
-            mqttClient.reconnect();
+      /*  try {
+         //   mqttClient.reconnect();
         } catch (MqttException e) {
             println("重连失败" + e.getMessage());
             throw new RuntimeException(e);
-        }
+        }*/
     }
 
     @Override

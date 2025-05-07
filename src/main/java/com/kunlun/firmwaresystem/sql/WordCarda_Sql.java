@@ -57,12 +57,12 @@ public class WordCarda_Sql {
         return wordCardaMapper.updateById(wordCard_a);
     }
 
-    public PageWordcarda selectPageWordcard(WordCardaMapper wordCardaMapper, int page, int limt, String mac, String userkey, String name) {
+    public PageWordcarda selectPageWordcard(WordCardaMapper wordCardaMapper, int page, int limt, String project_key, String search) {
         LambdaQueryWrapper<Wordcard_a> userLambdaQueryWrapper = Wrappers.lambdaQuery();
         Page<Wordcard_a> userPage = new Page<>(page, limt);
         IPage<Wordcard_a> userIPage;
-        userLambdaQueryWrapper.eq(Wordcard_a::getCustomer_key, userkey);
-        userLambdaQueryWrapper.like(Wordcard_a::getMac, mac);
+        userLambdaQueryWrapper.eq(Wordcard_a::getProject_key, project_key);
+        userLambdaQueryWrapper.like(Wordcard_a::getMac, search);
         userIPage = wordCardaMapper.selectPage(userPage, userLambdaQueryWrapper);
         println("总页数： " + userIPage.getPages());
         println("总记录数： " + userIPage.getTotal());

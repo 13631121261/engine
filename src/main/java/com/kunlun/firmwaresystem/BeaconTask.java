@@ -62,36 +62,32 @@ public class BeaconTask {
                // println("222");
                 if (beacon.getLastTime() == 0) {
                     //beacon.setOnline(0);
-                    StringUtil.sendBeaconPush_onOff(beacon, 0);
+                    StringUtil.sendBeaconPush_onOff(beacon, 0,"");
                         beacon.setLastTime(-28800);
 
                     continue;
                 }
                 //println("333");
             //    Check_sheet check_sheet=check_sheetMap.get(beacon.getProject_key());
-                int linetime=3;
+                int linetime=1;
 
 
               if (thisTime - beacon.getLastTime() < linetime * 60L) {
-                    println("信标在线");
+                 //   println("信标在线");
                     sendBeaconPush_Bt(beacon,1);
-                    StringUtil.sendBeaconPush_onOff(beacon, 1);
-                } else {       beacon.setT(true);
-                  // println("信标离线"+beacon.getMac());
+                    StringUtil.sendBeaconPush_onOff(beacon, 1,"");
+                    beacon.setT(true);
+                } else {
                   beacon.setRun(0);
                   beacon.setBt(""+0);
                   beacon.setGateway_address("/");
                   beacon.setRssi(0);
                   beacon.setSos(0);
-                  //  beacon.setOnline(0);
-                   /* if (beacon.getOnline() != 0) {
-                        StringUtil.saveRecord(beacon.getMac(), beacon.getLastTime(), beacon.getUser_key(), 2, 0,beacon.getProject_key());
-                    }*/
-                  // StringUtil.saveRecord(gateway.getAddress(),gateway.getLasttime(),gateway.getUser_key(),1,1,gateway.getProject_key());
-                  StringUtil.sendBeaconPush_onOff(beacon, 0);
-                  if(!beacon.isT()){
+                  StringUtil.sendBeaconPush_onOff(beacon, 0,"");
+                  if(beacon.isT()){
                       Alarm_Sql alarm_sql = new Alarm_Sql();
                       alarm_sql.addAlarm(alarmMapper,new Alarm(Alarm_Type.sos_offline,Alarm_object.beacon,beacon.getMap_key(),0,"", 0,0,"","Beacon",beacon.getMac(),beacon.getProject_key(),beacon.getLastTime()));
+                      beacon.setT(false);
                   }
               }
                 beacon_sql.update(beaconMapper, beacon);

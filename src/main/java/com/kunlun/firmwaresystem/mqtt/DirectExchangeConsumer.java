@@ -109,9 +109,9 @@ public class DirectExchangeConsumer {
         JSONObject jsonObject = JSONObject.parseObject(msg);
         String key = jsonObject.getString("project_key");
         String data = jsonObject.getString("msg");
-        System.out.println("推送到地图");
+    //    System.out.println("推送到地图");
         if (key != null && data != null) {
-            System.out.println("11111111111推送到地图");
+          //  System.out.println("11111111111推送到地图");
             webSockettag.sendData(key, data);
         }
     }

@@ -48,7 +48,7 @@ public class Alarm {
     this.bt=bt;
     this.map_key=map_key;
     if(time<=0){
-        time=System.currentTimeMillis()/1000;
+        time=0;
     }
     this.last_time=time;
     this.create_time=System.currentTimeMillis()/1000;
